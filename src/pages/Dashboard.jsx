@@ -14,7 +14,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     // Aquí podrías eliminar token si usas JWT
-    navigate("/");
+    navigate("/login");
   };
 
   return (

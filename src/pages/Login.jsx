@@ -24,7 +24,6 @@ const Login = () => {
       }
     } catch (err) {
       console.error(err);
-      console.log(email,password);
       setError("Error al iniciar sesión");
     }
   };

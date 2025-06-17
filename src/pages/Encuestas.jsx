@@ -5,6 +5,7 @@ const Encuestas = () => {
   const [encuestas, setEncuestas] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [sector, setSector] = useState("");
+  const [id, setId] = useState("");
 
   const cargarEncuestas = async () => {
     try {
@@ -19,9 +20,11 @@ const Encuestas = () => {
     e.preventDefault();
     try {
       await axios.post("http://localhost:3001/api/encuestas", {
+        id,
         titulo,
         sector,
       });
+      setId("");
       setTitulo("");
       setSector("");
       cargarEncuestas(); // Recargar la lista
@@ -40,6 +43,14 @@ const Encuestas = () => {
 
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="flex flex-col md:flex-row gap-2 mb-4">
+          <input
+            type="text"
+            placeholder="ID"
+            className="p-2 border rounded w-full"
+            value={id}
+            onChange={(e) => setId(e.target.value)}
+            required
+          />
           <input
             type="text"
             placeholder="Título"
@@ -65,7 +76,7 @@ const Encuestas = () => {
       <div className="grid gap-4">
         {encuestas.map((e) => (
           <div key={e.id} className="p-4 border rounded shadow bg-white">
-            <h3 className="text-xl font-semibold">{e.titulo}</h3>
+            <h3 className="text-xl font-semibold">{e.id} {e.titulo}</h3>
             <p className="text-gray-500">Sector: {e.sector}</p>
           </div>
         ))}
