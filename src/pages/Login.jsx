@@ -28,6 +28,11 @@ const Login = () => {
     }
   };
 
+  const registro = () => {
+    // Aquí podrías eliminar token si usas JWT
+    navigate("/registro");
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md w-full max-w-md">
@@ -50,9 +55,13 @@ const Login = () => {
           required
         />
         <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Entrar
+          Iniciar Sesión
+        </button>
+        <button onClick={registro} className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 mt-4">
+          Registrarse
         </button>
       </form>
+      
     </div>
   );
 };
