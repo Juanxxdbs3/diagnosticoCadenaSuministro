@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
-const Login = () => {
+const Registro = () => {
   const [id, setId] = useState("");
   const [nombre, setNombre] = useState("");
   const [apellidos, setApellidos] = useState("");
@@ -34,15 +34,20 @@ const Login = () => {
     }
   };
 
+  const login = () => {
+    // Aquí podrías eliminar token si usas JWT
+    navigate("/");
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-xl shadow-md w-full max-w-md">
-        <h2 className="text-2xl font-bold mb-4 text-center">Registro</h2>
-        {error && <p className="text-red-500 text-sm mb-2">{error}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0] px-4">
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-3xl font-bold mb-6 text-center text-[#1e293b]">Registro</h2>
+        {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <input
           type="text"
           placeholder="Identificación"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
+          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={id}
           onChange={(e) => setId(e.target.value)}
           required
@@ -50,7 +55,7 @@ const Login = () => {
         <input
           type="text"
           placeholder="Nombre"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
+          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
           required
@@ -58,7 +63,7 @@ const Login = () => {
         <input
           type="text"
           placeholder="Apellidos"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
+          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={apellidos}
           onChange={(e) => setApellidos(e.target.value)}
           required
@@ -66,7 +71,7 @@ const Login = () => {
         <input
           type="email"
           placeholder="Correo electrónico"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
+          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
@@ -74,17 +79,16 @@ const Login = () => {
         <input
           type="password"
           placeholder="Contraseña"
-          className="w-full p-2 border border-gray-300 rounded mb-4"
+          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
         />
-        <button className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700">
-          Registrarse
-        </button>
+        <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Registrarse</button>
+        <button onClick={login} type="button" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 mt-4 transition">Iniciar Sesión</button>
       </form>
     </div>
   );
 };
 
-export default Login;
+export default Registro;
