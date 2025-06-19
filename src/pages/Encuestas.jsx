@@ -2,17 +2,18 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
+import { EncuestasCard } from "../components/EncuestasCard";
+import { AddEncuestasCard } from "../components/AddEncuestasCard";
+import { Header } from "../components/Header";
+import { AddEncuestaModal } from "../components/AddEncuestaModal";
+
 const Encuestas = () => {
   const [encuestas, setEncuestas] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [sector, setSector] = useState("");
   const [id, setId] = useState("");
-  const navigate = useNavigate();
-
-  const back = () => {
-    // Aquí podrías eliminar token si usas JWT
-    navigate("/dashboard");
-  };
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState({ titulo: "", sector: "", archivo: null });
 
   const cargarEncuestas = async () => {
     try {
@@ -21,6 +22,13 @@ const Encuestas = () => {
     } catch (err) {
       console.error("Error al cargar encuestas", err);
     }
+  };
+
+  const handleModalSubmit = (e) => {
+    e.preventDefault();
+    console.log("Formulario enviado:", form);
+    // Aquí podrías enviar los datos al backend
+    setIsModalOpen(false);
   };
 
   const handleSubmit = async (e) => {
@@ -45,9 +53,27 @@ const Encuestas = () => {
   }, []);
 
   return (
-    <div className="p-6">
+    <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0]">
+      <Header />
+      <div className="px-6 pt-6">
+        <h2 className="text-2xl font-bold text-[#1e293b] mb-6">Todas las encuestas (2)</h2>
+        <div className="flex flex-wrap gap-6">
+          {encuestas.map((e) => (
+            <EncuestasCard title={e.titulo} respuestas={e.id} preguntas={e.sector} />
+          ))}
+          <AddEncuestasCard onClick={() => setIsModalOpen(true)} />
+          <AddEncuestaModal
+            isOpen={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            onSubmit={handleModalSubmit}
+            form={form}
+            setForm={setForm}
+          />
+        </div>
+      </div>
+    </div>
+    /*<div className="p-6">
       <h2 className="text-2xl font-bold mb-4">Encuestas</h2>
-
       <form onSubmit={handleSubmit} className="mb-6">
         <div className="flex flex-col md:flex-row gap-2 mb-4">
           <input
@@ -92,7 +118,7 @@ const Encuestas = () => {
           </div>
         ))}
       </div>
-    </div>
+    </div>*/
   );
 };
 
