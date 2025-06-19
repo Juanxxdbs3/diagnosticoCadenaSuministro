@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Encuestas = () => {
@@ -6,6 +7,12 @@ const Encuestas = () => {
   const [titulo, setTitulo] = useState("");
   const [sector, setSector] = useState("");
   const [id, setId] = useState("");
+  const navigate = useNavigate();
+
+  const back = () => {
+    // Aquí podrías eliminar token si usas JWT
+    navigate("/dashboard");
+  };
 
   const cargarEncuestas = async () => {
     try {
@@ -72,6 +79,10 @@ const Encuestas = () => {
           Guardar Encuesta
         </button>
       </form>
+
+      <button onClick={back} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 mb-5">
+          Volver
+      </button>
 
       <div className="grid gap-4">
         {encuestas.map((e) => (
