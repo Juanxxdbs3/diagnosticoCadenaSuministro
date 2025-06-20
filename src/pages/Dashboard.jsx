@@ -1,38 +1,18 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import Papa from "papaparse";
 
 import { DashboardHeader } from "../components/DashboardHeader";
 import { ResultadoPreguntaCard } from "../components/ResultadoPreguntaCard";
 
 const Dashboard = () => {
-  const [totalEncuestas, setTotalEncuestas] = useState(0);
-  const [data, setData] = useState([]);
+  const [totalEncuestas, setTotalEncuestas] = useState(0);  
 
   useEffect(() => {
     axios.get("http://localhost:3001/api/encuestas")
       .then((res) => setTotalEncuestas(res.data.length))
       .catch((err) => console.error("Error al cargar encuestas", err));
   }, []);
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-
-    if (file) {
-      Papa.parse(file, {
-        header: true, // true si el archivo tiene cabecera
-        skipEmptyLines: true,
-        complete: (results) => {
-          console.log("Parsed Data:", results.data);
-          setData(results.data);
-        },
-        error: (error) => {
-          console.error("Error parsing CSV:", error);
-        },
-      });
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0]">
