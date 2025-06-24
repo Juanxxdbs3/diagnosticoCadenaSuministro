@@ -12,7 +12,6 @@ export function EncuestasCard(props) {
     <div onClick={handleClick} className="border border-[#cbd5e1] bg-white shadow-md w-64 h-40 p-4 flex flex-col justify-between rounded-lg hover:shadow-lg transition">
       <div className="flex justify-between items-center">
         <h3 className="text-[#1e293b] font-semibold text-lg">{title}</h3>
-        <span className="text-[#64748b] text-xl">...</span>
       </div>
     </div>
   );
