@@ -109,7 +109,7 @@ const Encuestas = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0]">
       <Header />
       <div className="px-6 pt-6">
-        <h2 className="text-2xl font-bold text-[#1e293b] mb-6">Todas las encuestas ({nEncuestas})</h2>
+        <h2 className="text-2xl font-bold text-[#1e293b] mb-6">Todas las encuestas ({encuestas.length})</h2>
         <div className="flex flex-wrap gap-6">
           {encuestas.map((e) => (
             <EncuestasCard title={e.titulo}/>
