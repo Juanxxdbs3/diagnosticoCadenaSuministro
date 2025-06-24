@@ -6,7 +6,7 @@ const router = express.Router();
 // Obtener todas las encuestas
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT * FROM encuestas ORDER BY id DESC");
+    const result = await pool.query("SELECT * FROM encuestas ORDER BY id ASC");
     res.json(result.rows);
   } catch (err) {
     console.error("Error al obtener encuestas:", err);
