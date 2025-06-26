@@ -16,7 +16,7 @@ app.use(express.json());
 app.use("/api/login", authRoutes);
 app.use("/api/encuestas", encuestasRoutes);
 app.use("/api/registro", registroRoutes);
-app.use("/api/preguntas", preguntasRoutes);
+app.use("/api", preguntasRoutes);
 app.use("/api/respuestas", respuestasRoutes);
 
 const PORT = process.env.PORT || 3001;
