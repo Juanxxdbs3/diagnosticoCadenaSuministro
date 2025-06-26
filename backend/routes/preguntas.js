@@ -4,19 +4,26 @@ import pool from "../db.js";
 const router = express.Router();
 
 // Obtener todas las preguntas de la encuesta
-router.get("/", async (req, res) => {
+router.get("/preguntas/:id", async (req, res) => {
+  const id = req.params.id;
+
   try {
-    const result = await pool.query("SELECT * FROM preguntas ORDER BY id ASC");
+    const result = await pool.query(
+      "SELECT * FROM preguntas WHERE encuesta_id = $1 ORDER BY id ASC",
+      [id]
+    );
+
+    console.log("id de encuesta:", id);
     res.json(result.rows);
   } catch (err) {
-    console.error("Error al obtener encuestas:", err);
-    res.status(500).json({ error: "Error al obtener encuestas" });
+    console.error("Error al obtener preguntas:", err);
+    res.status(500).json({ error: "Error al obtener preguntas" });
   }
 });
 
 // Registrar nuevas preguntas
 router.post("/", async (req, res) => {
-  const { encuestaId, claves} = req.body;
+  const { encuestaId, claves } = req.body;
 
   try {
     const preguntaIds = [];
