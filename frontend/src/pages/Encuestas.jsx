@@ -10,7 +10,6 @@ import Papa from "papaparse";
 
 const Encuestas = () => {
   const [encuestas, setEncuestas] = useState([]);
-  const [preguntas, setPreguntas] = useState([]);
   const [titulo, setTitulo] = useState("");
   const [sector, setSector] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -112,7 +111,7 @@ const Encuestas = () => {
         <h2 className="text-2xl font-bold text-[#1e293b] mb-6">Todas las encuestas ({encuestas.length})</h2>
         <div className="flex flex-wrap gap-6">
           {encuestas.map((e) => (
-            <EncuestasCard title={e.titulo}/>
+            <EncuestasCard title={e.titulo} id={e.id}/>
           ))}
         </div>
       </div>
