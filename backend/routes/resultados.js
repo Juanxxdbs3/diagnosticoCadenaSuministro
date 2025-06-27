@@ -65,4 +65,61 @@ router.get("/empresa/:empresaId", async (req, res) => {
     }
 });
 
+// Obtener todos los sectores únicos
+router.get("/sectores", async (req, res) => {
+  try {
+    const result = await pool.query('SELECT DISTINCT sector FROM usuarios WHERE sector IS NOT NULL');
+    res.json(result.rows.map(r => r.sector));
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener sectores" });
+  }
+});
+
+// Estadísticas globales con filtros por sector y tipo (deficiencia/fortaleza)
+router.get("/stats/global", async (req, res) => {
+  const { sector, tipo } = req.query;
+  let params = [];
+  let whereSector = '';
+  let havingTipo = '';
+
+  if (sector) {
+    whereSector = 'AND u.sector = $1';
+    params.push(sector);
+  }
+
+  if (tipo === 'deficiencia') {
+    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) < 2';
+  } else if (tipo === 'fortaleza') {
+    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) > 4';
+  }
+
+  const query = `
+    SELECT 
+      e.id as instrumento_id,
+      e.titulo as instrumento_titulo,
+      AVG(CAST(r.valor AS NUMERIC)) as promedio,
+      STDDEV_POP(CAST(r.valor AS NUMERIC)) as desviacion_estandar,
+      VAR_POP(CAST(r.valor AS NUMERIC)) as varianza,
+      MIN(CAST(r.valor AS NUMERIC)) as minimo,
+      MAX(CAST(r.valor AS NUMERIC)) as maximo,
+      COUNT(r.id) as total_respuestas
+    FROM encuestas e
+    JOIN preguntas p ON e.id = p.encuesta_id
+    JOIN respuestas r ON p.id = r.pregunta_id
+    JOIN usuarios u ON e.empresa_id = u.id
+    WHERE 1=1
+      ${whereSector}
+    GROUP BY e.id, e.titulo
+    ${havingTipo}
+    ORDER BY e.id;
+  `;
+
+  try {
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener estadísticas globales" });
+  }
+});
+
 export default router;

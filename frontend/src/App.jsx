@@ -7,6 +7,7 @@ import Landing from "./pages/Landing";
 import DescripcionEncuestas from "./pages/DescripcionEncuestas";
 import ResponderEncuesta from "./pages/ResponderEncuesta";
 import ResultadosPage from './pages/ResultadosPage';
+import EstadisticasGlobales from './pages/EstadisticasGlobales';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/encuestas" element={<Encuestas />} />
       <Route path="/resultados" element={<ResultadosPage />} />
+      <Route path="/estadisticas-globales" element={<EstadisticasGlobales />} />
     </Routes>
   );
 }
