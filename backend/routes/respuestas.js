@@ -69,6 +69,39 @@ router.post("/matriz", async (req, res) => {
   }
 });
 
+// POST /api/respuestas/matriz-multiple
+router.post("/matriz-multiple", async (req, res) => {
+  const { encuestado_id, respuestas } = req.body;
+
+  if (!encuestado_id || !Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "Datos incompletos para guardar respuestas de matriz múltiple." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    for (const r of respuestas) {
+      const { pregunta_id, item_id, opcion_id } = r;
+
+      await client.query(
+        `INSERT INTO respuestas_matriz_multiple (encuestado_id, pregunta_id, item_id, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [encuestado_id, pregunta_id, item_id, opcion_id]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.status(201).json({ mensaje: "Respuestas de matriz múltiple guardadas correctamente." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al guardar respuestas de matriz múltiple:", error);
+    res.status(500).json({ error: "Error al guardar respuestas de matriz múltiple." });
+  } finally {
+    client.release();
+  }
+});
+
 // === NUEVOS ENDPOINTS DE ESTADÍSTICAS ===
 
 // 1. Estadísticas generales de una encuesta (instrumento)
