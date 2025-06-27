@@ -24,7 +24,7 @@ const Registro = () => {
 
       if (res.data.success) {
         // Aquí podrías guardar token o ID en localStorage si usas JWT
-        navigate("/");
+        navigate("/login");
       } else {
         setError("Credenciales incorrectas");
       }
@@ -36,7 +36,7 @@ const Registro = () => {
 
   const login = () => {
     // Aquí podrías eliminar token si usas JWT
-    navigate("/");
+    navigate("/login");
   };
 
   return (
@@ -46,7 +46,7 @@ const Registro = () => {
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <input
           type="text"
-          placeholder="Identificación"
+          placeholder="Identificación (C.C o NIT)"
           className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={id}
           onChange={(e) => setId(e.target.value)}
