@@ -6,6 +6,7 @@ import encuestasRoutes from "./routes/encuestas.js";
 import registroRoutes from "./routes/registro.js";
 import preguntasRoutes from "./routes/preguntas.js";
 import respuestasRoutes from "./routes/respuestas.js";
+import resultadosRoutes from './routes/resultados.js';
 
 dotenv.config();
 
@@ -18,6 +19,7 @@ app.use("/api/encuestas", encuestasRoutes);
 app.use("/api/registro", registroRoutes);
 app.use("/api", preguntasRoutes);
 app.use("/api/respuestas", respuestasRoutes);
+app.use('/api/resultados', resultadosRoutes); //asume que tabla encuestas tiene una columna como empresa_id para saber a quién pertenece cada una
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

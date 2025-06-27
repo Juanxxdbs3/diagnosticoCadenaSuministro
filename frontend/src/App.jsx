@@ -6,6 +6,7 @@ import Registro from "./pages/Registro";
 import Landing from "./pages/Landing";
 import DescripcionEncuestas from "./pages/DescripcionEncuestas";
 import ResponderEncuesta from "./pages/ResponderEncuesta";
+import ResultadosPage from './pages/ResultadosPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <Route path="/registro" element={<Registro />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/encuestas" element={<Encuestas />} />
+      <Route path="/resultados" element={<ResultadosPage />} />
     </Routes>
   );
 }
