@@ -5,12 +5,12 @@ const router = express.Router();
 
 // Registrar nuevo usuario
 router.post("/", async (req, res) => {
-  const { id, nombre, apellidos, email, password } = req.body;
+  const { id, nombre, email, password } = req.body;
 
   try {
     const result = await pool.query(
-      "INSERT INTO usuarios (id, nombre, apellidos, email, password) VALUES ($1, $2, $3, $4, $5) RETURNING *",
-      [id, nombre, apellidos, email, password]
+      "INSERT INTO usuarios (id, nombre, email, password) VALUES ($1, $2, $3, $4) RETURNING *",
+      [id, nombre, email, password]
     );
     if (result.rows.length > 0) {
       res.json({ success: true, user: result.rows[0] });

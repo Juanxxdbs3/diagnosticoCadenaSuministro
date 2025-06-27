@@ -7,15 +7,14 @@ function ResultadosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const empresaId = 1; // hardcoded for testing; replace with dynamic value as needed
+  const encuestadoId = 1; // hardcoded for testing; replace with dynamic value as needed
 
   useEffect(() => {
-    if (!empresaId) return;
+    if (!encuestadoId) return;
 
     const fetchResultados = async () => {
       try {
-        // Cambia la URL si usas proxy en Vite
-        const response = await axios.get(`http://localhost:3001/api/resultados/empresa/${empresaId}`);
+        const response = await axios.get(`http://localhost:3001/api/resultados/encuestado/${encuestadoId}`);
         setResultados(response.data);
       } catch (err) {
         setError('No se pudieron cargar los resultados. Verifica la conexión con el servidor y la configuración de CORS.');
@@ -26,7 +25,7 @@ function ResultadosPage() {
     };
 
     fetchResultados();
-  }, [empresaId]);
+  }, [encuestadoId]);
 
   if (loading) {
     return <div className="flex justify-center items-center h-screen text-gray-700">Cargando resultados...</div>;
@@ -50,7 +49,7 @@ function ResultadosPage() {
       <div className="max-w-7xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-800">Panel de Resultados</h1>
-          <p className="text-lg text-gray-600">Empresa: {resultados.nombreEmpresa}</p>
+          <p className="text-lg text-gray-600">Usuario: {resultados.nombreEncuestado}</p>
         </header>
 
         <main className="space-y-12">
@@ -61,7 +60,7 @@ function ResultadosPage() {
               <p className="text-gray-500">Promedio General</p>
             </div>
             <GraficoResultados
-              titulo="Promedio por Instrumento"
+              titulo="Promedio por Encuesta"
               datos={datosEvaluacionGeneral}
             />
           </section>

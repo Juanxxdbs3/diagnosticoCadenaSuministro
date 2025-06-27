@@ -15,14 +15,13 @@ const DescripcionEncuestas = () => {
   
     getEncuestas();
   }, []);
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0] text-[#1e293b]">
       <Header />
       <main className="px-6 py-10 max-w-6xl mx-auto">
         <section className="mb-10 bg-white p-6 rounded-2xl shadow-md text-center">
-          <h2 className="text-3xl font-bold mb-4">Aviso de confidencialidad de datos</h2>
+          <h2 className="text-3xl font-bold mb-4">Política de confidencialidad de datos</h2>
           <p className="text-[#475569] leading-relaxed text-justify">
           El Grupo de Investigación Gestión y Desarrollo Empresarial de la Facultad de Ciencias Económicas, Administrativas y Contables de la Fundación universitaria Tecnológico Comfenalco, extiende invitación para diligenciar la siguiente encuesta voluntaria y anónima.
           <br /><br />

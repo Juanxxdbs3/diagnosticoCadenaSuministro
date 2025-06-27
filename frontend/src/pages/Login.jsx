@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [id, setId] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -12,7 +12,7 @@ const Login = () => {
     e.preventDefault();
     try {
       const res = await axios.post("http://localhost:3001/api/login", {
-        email,
+        id,
         password,
       });
 
@@ -39,11 +39,11 @@ const Login = () => {
         <h2 className="text-3xl font-bold mb-6 text-center text-[#1e293b]">Iniciar Sesión</h2>
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <input
-          type="email"
-          placeholder="Correo electrónico"
+          type="text"
+          placeholder="Identificación (C.C o NIT)"
           className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={id}
+          onChange={(e) => setId(e.target.value)}
           required
         />
         <input

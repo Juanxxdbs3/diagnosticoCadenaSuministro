@@ -5,7 +5,6 @@ import axios from "axios";
 const Registro = () => {
   const [id, setId] = useState("");
   const [nombre, setNombre] = useState("");
-  const [apellidos, setApellidos] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,14 +16,13 @@ const Registro = () => {
       const res = await axios.post("http://localhost:3001/api/registro", {
         id,
         nombre,
-        apellidos,
         email,
         password
       });
 
       if (res.data.success) {
         // Aquí podrías guardar token o ID en localStorage si usas JWT
-        navigate("/");
+        navigate("/login");
       } else {
         setError("Credenciales incorrectas");
       }
@@ -36,7 +34,7 @@ const Registro = () => {
 
   const login = () => {
     // Aquí podrías eliminar token si usas JWT
-    navigate("/");
+    navigate("/login");
   };
 
   return (
@@ -46,7 +44,7 @@ const Registro = () => {
         {error && <p className="text-red-500 text-sm mb-4 text-center">{error}</p>}
         <input
           type="text"
-          placeholder="Identificación"
+          placeholder="Identificación (C.C o NIT)"
           className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={id}
           onChange={(e) => setId(e.target.value)}
@@ -54,18 +52,10 @@ const Registro = () => {
         />
         <input
           type="text"
-          placeholder="Nombre"
+          placeholder="Nombre o Razón Social"
           className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          required
-        />
-        <input
-          type="text"
-          placeholder="Apellidos"
-          className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          value={apellidos}
-          onChange={(e) => setApellidos(e.target.value)}
           required
         />
         <input
