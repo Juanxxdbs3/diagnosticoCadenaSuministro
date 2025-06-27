@@ -4,12 +4,12 @@ import pool from "../db.js";
 const router = express.Router();
 
 router.post("/", async (req, res) => {
-  const { email, password } = req.body;
+  const { id, password } = req.body;
 
   try {
     const result = await pool.query(
-      "SELECT * FROM usuarios WHERE email = $1 AND password = $2",
-      [email, password]
+      "SELECT * FROM usuarios WHERE id = $1 AND password = $2",
+      [id, password]
     );
 
     if (result.rows.length > 0) {
