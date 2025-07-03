@@ -3,28 +3,104 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// Registrar nuevas respuestas de una encuesta
+// POST /api/respuestas
 router.post("/", async (req, res) => {
-  // Tu código existente para guardar respuestas funciona bien.
-  const { valores, preguntaIds } = req.body;
+  const { encuestado_id, respuestas } = req.body;
+
+  if (!encuestado_id || !Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "Datos incompletos para guardar respuestas." });
+  }
+
+  const client = await pool.connect();
   try {
-    for (let i = 0; i < preguntaIds.length; i++) {
-      const preguntaId = preguntaIds[i];
-      for (let j = 0; j < valores.length; j++) {
-        const respuesta = valores[j][i];
-        await pool.query(
-          "INSERT INTO respuestas (valor, pregunta_id) VALUES ($1, $2)",
-          [respuesta, preguntaId]
-        );
-      }
+    await client.query("BEGIN");
+
+    for (const r of respuestas) {
+      const { pregunta_id, texto, opcion_id = null } = r;
+
+      await client.query(
+        `INSERT INTO respuestas (encuestado_id, pregunta_id, texto, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [encuestado_id, pregunta_id, texto, opcion_id]
+      );
     }
-    res.status(201).json({ message: "Respuestas registradas correctamente" });
-  } catch (err) {
-    console.error("Error al insertar respuestas", err);
-    res.status(500).json({ error: "Error al insertar respuestas" });
+
+    await client.query("COMMIT");
+    res.status(201).json({ mensaje: "Respuestas guardadas correctamente." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al guardar respuestas:", error);
+    res.status(500).json({ error: "Error al guardar respuestas." });
+  } finally {
+    client.release();
   }
 });
 
+// POST /api/respuestas/matriz
+router.post("/matriz", async (req, res) => {
+  const { encuestado_id, respuestas } = req.body;
+
+  if (!encuestado_id || !Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "Datos incompletos para guardar respuestas de matriz." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    for (const r of respuestas) {
+      const { pregunta_id, item_id, texto, opcion_id = null } = r;
+
+      await client.query(
+        `INSERT INTO respuestas_matriz (encuestado_id, pregunta_id, item_id, texto, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [encuestado_id, pregunta_id, item_id, texto, opcion_id]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.status(201).json({ mensaje: "Respuestas de matriz guardadas correctamente." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al guardar respuestas de matriz:", error);
+    res.status(500).json({ error: "Error al guardar respuestas de matriz." });
+  } finally {
+    client.release();
+  }
+});
+
+// POST /api/respuestas/matriz-multiple
+router.post("/matriz-multiple", async (req, res) => {
+  const { encuestado_id, respuestas } = req.body;
+
+  if (!encuestado_id || !Array.isArray(respuestas)) {
+    return res.status(400).json({ error: "Datos incompletos para guardar respuestas de matriz múltiple." });
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    for (const r of respuestas) {
+      const { pregunta_id, item_id, opcion_id } = r;
+
+      await client.query(
+        `INSERT INTO respuestas_matriz_multiple (encuestado_id, pregunta_id, item_id, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [encuestado_id, pregunta_id, item_id, opcion_id]
+      );
+    }
+
+    await client.query("COMMIT");
+    res.status(201).json({ mensaje: "Respuestas de matriz múltiple guardadas correctamente." });
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Error al guardar respuestas de matriz múltiple:", error);
+    res.status(500).json({ error: "Error al guardar respuestas de matriz múltiple." });
+  } finally {
+    client.release();
+  }
+});
 
 // === NUEVOS ENDPOINTS DE ESTADÍSTICAS ===
 
