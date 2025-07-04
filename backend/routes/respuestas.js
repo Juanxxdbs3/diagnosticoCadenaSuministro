@@ -1,22 +1,29 @@
 import express from "express";
 import pool from "../db.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // POST /api/respuestas
-router.post("/", async (req, res) => {
-  const { encuestado_id, respuestas, respuestas_matriz = [], respuestas_matriz_multiple = [] } = req.body;
+router.post("/", protect, async (req, res) => {
+  // Soporta respuestas normales, de matriz y de matriz múltiple en un solo endpoint
+  const {
+    encuestado_id,
+    respuestas = [],
+    respuestas_matriz = [],
+    respuestas_matriz_multiple = []
+  } = req.body;
 
   if (!encuestado_id) {
-    return res.status(400).json({ error: "Falta el ID del encuestado" });
+    return res.status(400).json({ error: "Falta el encuestado_id." });
   }
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    // Guardar respuestas simples
-    for (const r of respuestas || []) {
+    // Guardar respuestas normales
+    for (const r of respuestas) {
       const { pregunta_id, texto, opcion_id = null } = r;
       await client.query(
         `INSERT INTO respuestas (encuestado_id, pregunta_id, texto, opcion_id, fecha_respuesta)
@@ -27,30 +34,30 @@ router.post("/", async (req, res) => {
 
     // Guardar respuestas de matriz
     for (const r of respuestas_matriz) {
-      const { item_matriz_id, opcion_id } = r;
+      const { pregunta_id, item_id, texto, opcion_id = null } = r;
       await client.query(
-        `INSERT INTO respuestas_matriz (encuestado_id, item_matriz_id, opcion_id, fecha_respuesta)
-         VALUES ($1, $2, $3, NOW())`,
-        [encuestado_id, item_matriz_id, opcion_id]
+        `INSERT INTO respuestas_matriz (encuestado_id, pregunta_id, item_id, texto, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [encuestado_id, pregunta_id, item_id, texto, opcion_id]
       );
     }
 
     // Guardar respuestas de matriz múltiple
     for (const r of respuestas_matriz_multiple) {
-      const { item_matriz_id, opcion_id } = r;
+      const { pregunta_id, item_id, opcion_id } = r;
       await client.query(
-        `INSERT INTO respuestas_matriz_multiple (encuestado_id, item_matriz_id, opcion_id, fecha_respuesta)
-         VALUES ($1, $2, $3, NOW())`,
-        [encuestado_id, item_matriz_id, opcion_id]
+        `INSERT INTO respuestas_matriz_multiple (encuestado_id, pregunta_id, item_id, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [encuestado_id, pregunta_id, item_id, opcion_id]
       );
     }
 
     await client.query("COMMIT");
-    res.status(201).json({ mensaje: "Respuestas guardadas correctamente" });
-  } catch (err) {
+    res.status(201).json({ mensaje: "Respuestas guardadas correctamente." });
+  } catch (error) {
     await client.query("ROLLBACK");
-    console.error("Error al guardar respuestas:", err);
-    res.status(500).json({ error: "Error al guardar respuestas" });
+    console.error("Error al guardar respuestas:", error);
+    res.status(500).json({ error: "Error al guardar respuestas." });
   } finally {
     client.release();
   }
@@ -59,7 +66,7 @@ router.post("/", async (req, res) => {
 // === NUEVOS ENDPOINTS DE ESTADÍSTICAS ===
 
 // 1. Estadísticas generales de una encuesta (instrumento)
-router.get("/stats/:encuestaId", async (req, res) => {
+router.get("/stats/:encuestaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
   const { encuestaId } = req.params;
   try {
     const statsPorPregunta = await pool.query(`
@@ -95,7 +102,7 @@ router.get("/stats/:encuestaId", async (req, res) => {
 });
 
 // 2. Estadísticas de una pregunta específica
-router.get("/stats/pregunta/:preguntaId", async (req, res) => {
+router.get("/stats/pregunta/:preguntaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
     const { preguntaId } = req.params;
     try {
         const stats = await pool.query(`
@@ -118,7 +125,7 @@ router.get("/stats/pregunta/:preguntaId", async (req, res) => {
 
 
 // 3. Generar datos de prueba (muy útil para desarrollo)
-router.post("/generar-datos-prueba/:encuestaId", async (req, res) => {
+router.post("/generar-datos-prueba/:encuestaId", protect, authorize('admin'), async (req, res) => {
     const { encuestaId } = req.params;
     const { cantidad = 5 } = req.body; // Genera 5 respuestas por pregunta por defecto
     
