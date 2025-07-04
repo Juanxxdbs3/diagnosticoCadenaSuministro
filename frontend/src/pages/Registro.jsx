@@ -8,6 +8,7 @@ const Registro = () => {
   const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rol, setRol] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
@@ -18,11 +19,11 @@ const Registro = () => {
         id,
         nombre,
         email,
-        password
+        password,
+        rol
       });
 
       if (res.data.success) {
-        // Aquí podrías guardar token o ID en localStorage si usas JWT
         navigate("/login");
       } else {
         setError("Credenciales incorrectas");
@@ -33,7 +34,7 @@ const Registro = () => {
     }
   };
 
-  const login = () => {
+  const goToLogin = () => {
     // Aquí podrías eliminar token si usas JWT
     navigate("/login");
   };
@@ -77,8 +78,16 @@ const Registro = () => {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
+          <input
+            type="text"
+            placeholder="Rol"
+            className="w-full p-3 border border-[#cbd5e1] rounded-lg mb-4 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={rol}
+            onChange={(e) => setRol(e.target.value)}
+            required
+          />
           <button className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Registrarse</button>
-          <button onClick={login} type="button" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 mt-4 transition">Iniciar Sesión</button>
+          <button onClick={goToLogin} type="button" className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 mt-4 transition">Iniciar Sesión</button>
         </form>
       </div>
     </div>
