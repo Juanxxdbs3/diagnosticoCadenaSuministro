@@ -7,7 +7,7 @@ function ResultadosPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  const encuestadoId = 1; // hardcoded for testing; replace with dynamic value as needed
+  const encuestadoId = 1043639683; // hardcoded for testing; replace with dynamic value as needed
 
   useEffect(() => {
     if (!encuestadoId) return;
