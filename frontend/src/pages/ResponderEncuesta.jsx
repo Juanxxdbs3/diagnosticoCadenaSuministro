@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Header } from "../components/Header";
 
@@ -11,6 +11,7 @@ const ResponderEncuesta = () => {
   const [respuestasMatriz, setRespuestasMatriz] = useState([]);
   const [respuestasMatrizMultiple, setRespuestasMatrizMultiple] = useState([]);
   const [encuestadoId, setEncuestadoId] = useState(null);
+  const navigate = useNavigate();
   const [datosEncuestado, setDatosEncuestado] = useState({
     empresaId: "",
     sector: "",
@@ -123,7 +124,7 @@ const ResponderEncuesta = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0] text-[#1e293b]">
       <Header />
-      <main className="max-w-2xl mx-auto px-6 py-10 bg-white rounded-2xl shadow-md mt-10">
+      <main className="max-w-4xl mx-auto px-6 py-10 bg-white rounded-2xl shadow-md mt-10">
         <h2 className="text-xl font-bold mb-4">Pregunta {indice + 1} de {preguntas.length}</h2>
         <p className="text-lg mb-6">{pregunta.texto}</p>
 
