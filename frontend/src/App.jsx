@@ -17,7 +17,9 @@ function App() {
       {/* Rutas Públicas */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/registro" element={<Registro />}/>
       <Route path="/descripcionEncuestas" element={<DescripcionEncuestas />} />
+      <Route path="/responder/:id" element={<ResponderEncuesta />} />
 
       {/* Rutas Protegidas */}
       <Route
@@ -33,22 +35,6 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={['admin', 'evaluador']}>
             <Encuestas />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/registro"
-        element={
-          <ProtectedRoute allowedRoles={['admin']}>
-            <Registro />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/responder/:id"
-        element={
-          <ProtectedRoute allowedRoles={['empresa']}>
-            <ResponderEncuesta />
           </ProtectedRoute>
         }
       />
