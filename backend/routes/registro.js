@@ -1,36 +1,36 @@
 import express from "express";
 import pool from "../db.js";
 import bcrypt from 'bcryptjs';
-import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Registrar nuevo usuario (solo admin)
-router.post("/", protect, authorize('admin'), async (req, res) => {
-  const { nombre, email, password, rol } = req.body;
+// Registro abierto
+router.post("/", async (req, res) => {
+  const { id, nombre, email, password, rol } = req.body;
 
-  if (!nombre || !email || !password || !rol) {
+  if (!id || !nombre || !email || !password || !rol) {
     return res.status(400).json({ message: "Todos los campos son obligatorios" });
   }
 
   try {
     // Verificar si el usuario ya existe
-    const userExists = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+    const userExists = await pool.query("SELECT * FROM usuarios WHERE id = $1", [id]);
     if (userExists.rows.length > 0) {
-      return res.status(400).json({ message: "El correo electrónico ya está registrado" });
+      return res.status(400).json({ message: "La cédula o NIT ya está registrado" });
     }
 
-    // Hashear la contraseña antes de guardarla
+    // Hashear la contraseña
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Guardar el nuevo usuario con la contraseña hasheada
+    // Guardar el usuario
     const result = await pool.query(
-      "INSERT INTO usuarios (nombre, email, password, rol) VALUES ($1, $2, $3, $4) RETURNING id, nombre, email, rol",
-      [nombre, email, hashedPassword, rol]
+      "INSERT INTO usuarios (id, nombre, email, password, rol) VALUES ($1, $2, $3, $4, $5) RETURNING id, nombre, email, rol",
+      [id, nombre, email, hashedPassword, rol]
     );
 
     res.status(201).json({
+      success: true,
       message: "Usuario registrado exitosamente",
       user: result.rows[0]
     });
