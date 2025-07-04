@@ -34,7 +34,7 @@ const Landing = () => {
         <div className="mt-12 text-center">
           <Link to="/descripcionEncuestas">
             <button className="bg-[#0f172a] hover:bg-[#1e293b] text-white px-6 py-3 rounded-xl text-lg transition">
-              Responder Encuestas
+              Ver Encuestas
             </button>
           </Link>
         </div>
