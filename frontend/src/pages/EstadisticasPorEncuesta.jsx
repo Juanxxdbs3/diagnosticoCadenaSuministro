@@ -20,7 +20,27 @@ function EstadisticasPorEncuesta() {
 
   if (loading) return <p className="p-8 text-center">Cargando estadísticas...</p>;
   if (error) return <p className="p-8 text-center text-red-600">{error}</p>;
-  if (!data) return null;
+  if (!data || !data.questionStats || data.questionStats.length === 0) {
+    // Mostrar gráfico vacío y mensaje
+    return (
+      <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Estadísticas de la Encuesta</h1>
+          </header>
+          <section className="bg-white p-6 rounded-xl shadow-lg mb-10">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Promedio por Pregunta</h2>
+            <GraficoResultados
+              labels={["Sin datos"]}
+              values={[0]}
+              title="Promedio por Pregunta"
+            />
+            <p className="text-center text-gray-500 mt-4">Aún no se han registrado respuestas para esta encuesta.</p>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   const labels = data.questionStats.map(q => q.questiontext);
   const values = data.questionStats.map(q => parseFloat(q.avgscore));

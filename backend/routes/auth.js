@@ -7,28 +7,33 @@ const router = express.Router();
 
 // POST /api/login
 router.post("/", async (req, res) => {
-  const { id, password } = req.body;
+  const { email, password } = req.body;
 
-  if (!id || !password) {
-    return res.status(400).json({ message: "Por favor, proporciona id y contraseña" });
+  if (!email || !password) {
+    return res.status(400).json({ message: "Por favor, proporciona email y contraseña" });
   }
 
   try {
-    // Buscar usuario por email
-    const result = await pool.query("SELECT * FROM usuarios WHERE id = $1", [id]);
+    // 1. Buscar al usuario por su email
+    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+
+    // Si no se encuentra ningún usuario con ese email
     if (result.rows.length === 0) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
     const user = result.rows[0];
 
-    // Comparar contraseña hasheada
-    const isMatch = await bcrypt.compare(password, user.password);
+    // 2. Comparar la contraseña proporcionada con la hasheada en la BD
+    // Esta es la corrección clave. Nos aseguramos de que user.password existe.
+    const isMatch = user.password ? await bcrypt.compare(password, user.password) : false;
+
     if (!isMatch) {
+      // Si la contraseña no coincide
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
 
-    // Generar token JWT
+    // 3. Si las credenciales son correctas, generar el token JWT
     const payload = {
       id: user.id,
       rol: user.rol,
@@ -38,9 +43,10 @@ router.post("/", async (req, res) => {
     const token = jwt.sign(
       payload,
       process.env.JWT_SECRET,
-      { expiresIn: '1d' }
+      { expiresIn: '1d' } // El token expirará en 1 día
     );
 
+    // 4. Enviar el token y los datos del usuario (sin la contraseña)
     res.json({
       token,
       user: {

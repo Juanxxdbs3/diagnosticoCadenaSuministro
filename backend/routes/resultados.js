@@ -1,130 +1,103 @@
+/*Propósito: Este es el cerebro para calcular los resultados de un encuestado.
+ La nueva consulta SQL es compleja porque une múltiples tablas de respuestas
+ para darte el promedio por cada uno de los 13 instrumentos.
+--------------------------------------------------------------------------------
+*/
 import express from "express";
 import pool from "../db.js";
-import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Ver resultados de una empresa (solo esa empresa, admin o evaluador)
-router.get("/encuestado/:encuestadoId", protect, async (req, res) => {
-  const { encuestadoId } = req.params;
-  const user = req.user;
+// GET /api/resultados/encuestado/:encuestadoId
+// Devuelve los resultados consolidados para un solo encuestado.
+router.get("/encuestado/:encuestadoId", async (req, res) => {
+    const { encuestadoId } = req.params;
 
-  // Permitir si es admin/evaluador o si es la propia empresa
-  if (
-    user.rol !== 'admin' &&
-    user.rol !== 'evaluador' &&
-    !(user.rol === 'empresa' && String(user.id) === String(encuestadoId))
-  ) {
-    return res.status(403).json({ error: "No autorizado para ver estos resultados" });
-  }
+    try {
+        // Primero, obtenemos el nombre del encuestado
+        const infoEncuestado = await pool.query('SELECT nombre_encuestado FROM encuestados WHERE id = $1', [encuestadoId]);
+        const nombreEncuestado = infoEncuestado.rows.length > 0 ? infoEncuestado.rows[0].nombre_encuestado : "Usuario Desconocido";
 
-  try {
-    // Obtener nombre del encuestado
-    const usuarioResult = await pool.query(
-      "SELECT nombre FROM usuarios WHERE id = $1",
-      [encuestadoId]
-    );
+        // Segundo, la consulta para agregar todos los resultados
+        const query = `
+            SELECT
+                encuesta_id,
+                encuesta_titulo,
+                AVG(valor_respuesta) AS promedio
+            FROM (
+                -- Respuestas de opción simple y escala
+                SELECT
+                    p.encuesta_id,
+                    e.titulo AS encuesta_titulo,
+                    o.valor AS valor_respuesta
+                FROM respuestas r
+                JOIN opciones o ON r.opcion_id = o.id
+                JOIN preguntas p ON r.pregunta_id = p.id
+                JOIN encuestas e ON p.encuesta_id = e.id
+                WHERE r.encuestado_id = $1 AND o.valor IS NOT NULL
 
-    const nombreEncuestado = usuarioResult.rows[0]?.nombre || "Usuario desconocido";
+                UNION ALL
 
-    // Obtener promedio por encuesta usando respuestas y opciones
-    const resultadosResult = await pool.query(`
-      SELECT 
-        e.id AS encuesta_id,
-        e.titulo,
-        AVG(o.valor) AS promedio
-      FROM respuestas r
-      JOIN preguntas p ON r.pregunta_id = p.id
-      JOIN encuestas e ON p.encuesta_id = e.id
-      JOIN opciones o ON r.opcion_id = o.id
-      WHERE r.encuestado_id = $1 AND o.valor IS NOT NULL
-      GROUP BY e.id, e.titulo
-      ORDER BY e.id
-    `, [encuestadoId]);
+                -- Respuestas de matriz de escala
+                SELECT
+                    p.encuesta_id,
+                    e.titulo AS encuesta_titulo,
+                    o.valor AS valor_respuesta
+                FROM respuestas_matriz rm
+                JOIN opciones o ON rm.opcion_id = o.id
+                JOIN items_matriz im ON rm.item_matriz_id = im.id
+                JOIN preguntas p ON im.pregunta_id = p.id
+                JOIN encuestas e ON p.encuesta_id = e.id
+                WHERE rm.encuestado_id = $1 AND o.valor IS NOT NULL
+                
+                UNION ALL
 
-    const resultados = resultadosResult.rows;
+                -- Respuestas de matriz de opción múltiple (si también usan 'valor')
+                SELECT
+                    p.encuesta_id,
+                    e.titulo AS encuesta_titulo,
+                    o.valor AS valor_respuesta
+                FROM respuestas_matriz_multiple rmm
+                JOIN opciones o ON rmm.opcion_id = o.id
+                JOIN items_matriz im ON rmm.item_matriz_id = im.id
+                JOIN preguntas p ON im.pregunta_id = p.id
+                JOIN encuestas e ON p.encuesta_id = e.id
+                WHERE rmm.encuestado_id = $1 AND o.valor IS NOT NULL
 
-    // Calcular promedio general
-    const promedioTotal = resultados.length
-      ? resultados.reduce((acc, curr) => acc + parseFloat(curr.promedio), 0) / resultados.length
-      : 0;
+            ) AS todas_las_respuestas
+            GROUP BY encuesta_id, encuesta_titulo
+            ORDER BY encuesta_id;
+        `;
 
-    const respuesta = {
-      nombreEncuestado,
-      evaluacionGeneral: {
-        titulo: "Evaluación General de la Cadena de Suministro",
-        promedioTotal,
-        resultadosPorInstrumento: resultados.map(r => ({
-          id: r.encuesta_id,
-          titulo: r.titulo,
-          promedio: parseFloat(r.promedio)
-        }))
-      },
-      detalleInstrumento: null // Se puede implementar como otro endpoint
-    };
+        const resultadosPorInstrumento = await pool.query(query, [encuestadoId]);
 
-    res.json(respuesta);
-  } catch (error) {
-    console.error("Error al obtener resultados del encuestado:", error);
-    res.status(500).json({ error: "Error al obtener resultados del encuestado" });
-  }
-});
+        // Tercero, calculamos el promedio general
+        let promedioTotal = 0;
+        if (resultadosPorInstrumento.rows.length > 0) {
+            const sumaDePromedios = resultadosPorInstrumento.rows.reduce((acc, curr) => acc + parseFloat(curr.promedio), 0);
+            promedioTotal = sumaDePromedios / resultadosPorInstrumento.rows.length;
+        }
 
-// Obtener todos los sectores únicos (solo autenticados)
-router.get("/sectores", protect, async (req, res) => {
-  try {
-    const result = await pool.query('SELECT DISTINCT sector FROM usuarios WHERE sector IS NOT NULL');
-    res.json(result.rows.map(r => r.sector));
-  } catch (err) {
-    res.status(500).json({ error: "Error al obtener sectores" });
-  }
-});
+        // Estructuramos la respuesta como la espera el frontend
+        const respuestaFinal = {
+            nombreEncuestado: nombreEncuestado,
+            evaluacionGeneral: {
+                titulo: "Evaluación General de la Cadena de Suministro",
+                promedioTotal: promedioTotal,
+                resultadosPorInstrumento: resultadosPorInstrumento.rows.map(row => ({
+                    id: row.encuesta_id,
+                    titulo: row.encuesta_titulo,
+                    promedio: parseFloat(row.promedio)
+                }))
+            }
+        };
 
-// Estadísticas globales (solo admin/evaluador)
-router.get("/stats/global", protect, authorize('admin', 'evaluador'), async (req, res) => {
-  const { sector, tipo } = req.query;
-  let params = [];
-  let whereSector = '';
-  let havingTipo = '';
+        res.json(respuestaFinal);
 
-  if (sector) {
-    whereSector = 'AND u.sector = $1';
-    params.push(sector);
-  }
-
-  if (tipo === 'deficiencia') {
-    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) < 2';
-  } else if (tipo === 'fortaleza') {
-    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) > 4';
-  }
-
-  const query = `
-    SELECT 
-      e.id as instrumento_id,
-      e.titulo as instrumento_titulo,
-      AVG(CAST(r.valor AS NUMERIC)) as promedio,
-      STDDEV_POP(CAST(r.valor AS NUMERIC)) as desviacion_estandar,
-      VAR_POP(CAST(r.valor AS NUMERIC)) as varianza,
-      MIN(CAST(r.valor AS NUMERIC)) as minimo,
-      MAX(CAST(r.valor AS NUMERIC)) as maximo,
-      COUNT(r.id) as total_respuestas
-    FROM encuestas e
-    JOIN preguntas p ON e.id = p.encuesta_id
-    JOIN respuestas r ON p.id = r.pregunta_id
-    JOIN usuarios u ON e.empresa_id = u.id
-    WHERE 1=1
-      ${whereSector}
-    GROUP BY e.id, e.titulo
-    ${havingTipo}
-    ORDER BY e.id;
-  `;
-
-  try {
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: "Error al obtener estadísticas globales" });
-  }
+    } catch (err) {
+        console.error("Error al obtener resultados del encuestado:", err);
+        res.status(500).json({ error: "Error del servidor" });
+    }
 });
 
 export default router;

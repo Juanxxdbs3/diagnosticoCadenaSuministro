@@ -46,12 +46,36 @@ router.get("/global", protect, authorize('admin', 'evaluador'), async (req, res)
  * GET /api/stats/encuesta/:encuestaId
  * Estadísticas detalladas por pregunta de una encuesta concreta.
  */
-router.get("/encuesta/:encuestaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
+router.get("/encuesta/:encuestaId", protect, async (req, res) => {
   const encuestaId = Number(req.params.encuestaId);
   if (isNaN(encuestaId)) {
     return res.status(400).json({ error: "ID de encuesta inválido" });
   }
+
   try {
+    // 1. Obtener el id de la empresa dueña de la encuesta
+    const encuestaInfo = await pool.query(
+      `SELECT empresa_id FROM encuestas WHERE id = $1`,
+      [encuestaId]
+    );
+    if (encuestaInfo.rows.length === 0) {
+      return res.status(404).json({ error: "Encuesta no encontrada" });
+    }
+    const empresaId = encuestaInfo.rows[0].empresa_id;
+
+    // 2. Permitir acceso solo si:
+    // - Es admin o evaluador
+    // - O es empresa y es la dueña de la encuesta
+    const user = req.user;
+    if (
+      user.rol !== 'admin' &&
+      user.rol !== 'evaluador' &&
+      !(user.rol === 'empresa' && String(user.id) === String(empresaId))
+    ) {
+      return res.status(403).json({ error: "No autorizado para ver estadísticas de esta encuesta" });
+    }
+
+    // 3. Obtener estadísticas (igual que antes)
     const q = await pool.query(`
       SELECT
         p.id               AS questionId,
@@ -76,17 +100,18 @@ router.get("/encuesta/:encuestaId", protect, authorize('admin', 'evaluador'), as
       WHERE p.encuesta_id = $1;
     `, [encuestaId]);
 
-    const avg = Number(overall.rows[0].overallavg) || 0;
+    // 4. Si no hay respuestas, devolver datos en cero
+    const avg = Number(overall.rows[0]?.overallavg) || 0;
     const status = avg < 2  ? 'deficiente'
                  : avg > 4  ? 'fortaleza'
                  : 'normal';
 
     res.json({
-      questionStats: q.rows,
+      questionStats: q.rows || [],
       overall: {
         overallAvg:      avg,
-        overallVariance: Number(overall.rows[0].overallvariance) || 0,
-        overallStddev:   Number(overall.rows[0].overallstddev)   || 0,
+        overallVariance: Number(overall.rows[0]?.overallvariance) || 0,
+        overallStddev:   Number(overall.rows[0]?.overallstddev)   || 0,
         status
       }
     });
