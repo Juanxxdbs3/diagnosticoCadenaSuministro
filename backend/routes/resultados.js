@@ -1,11 +1,22 @@
 import express from "express";
 import pool from "../db.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Endpoint principal para obtener los resultados consolidados de una empresa
-router.get("/encuestado/:encuestadoId", async (req, res) => {
+// Ver resultados de una empresa (solo esa empresa, admin o evaluador)
+router.get("/encuestado/:encuestadoId", protect, async (req, res) => {
   const { encuestadoId } = req.params;
+  const user = req.user;
+
+  // Permitir si es admin/evaluador o si es la propia empresa
+  if (
+    user.rol !== 'admin' &&
+    user.rol !== 'evaluador' &&
+    !(user.rol === 'empresa' && String(user.id) === String(encuestadoId))
+  ) {
+    return res.status(403).json({ error: "No autorizado para ver estos resultados" });
+  }
 
   try {
     // Obtener nombre del encuestado
@@ -56,6 +67,63 @@ router.get("/encuestado/:encuestadoId", async (req, res) => {
   } catch (error) {
     console.error("Error al obtener resultados del encuestado:", error);
     res.status(500).json({ error: "Error al obtener resultados del encuestado" });
+  }
+});
+
+// Obtener todos los sectores únicos (solo autenticados)
+router.get("/sectores", protect, async (req, res) => {
+  try {
+    const result = await pool.query('SELECT DISTINCT sector FROM usuarios WHERE sector IS NOT NULL');
+    res.json(result.rows.map(r => r.sector));
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener sectores" });
+  }
+});
+
+// Estadísticas globales (solo admin/evaluador)
+router.get("/stats/global", protect, authorize('admin', 'evaluador'), async (req, res) => {
+  const { sector, tipo } = req.query;
+  let params = [];
+  let whereSector = '';
+  let havingTipo = '';
+
+  if (sector) {
+    whereSector = 'AND u.sector = $1';
+    params.push(sector);
+  }
+
+  if (tipo === 'deficiencia') {
+    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) < 2';
+  } else if (tipo === 'fortaleza') {
+    havingTipo = 'HAVING AVG(CAST(r.valor AS NUMERIC)) > 4';
+  }
+
+  const query = `
+    SELECT 
+      e.id as instrumento_id,
+      e.titulo as instrumento_titulo,
+      AVG(CAST(r.valor AS NUMERIC)) as promedio,
+      STDDEV_POP(CAST(r.valor AS NUMERIC)) as desviacion_estandar,
+      VAR_POP(CAST(r.valor AS NUMERIC)) as varianza,
+      MIN(CAST(r.valor AS NUMERIC)) as minimo,
+      MAX(CAST(r.valor AS NUMERIC)) as maximo,
+      COUNT(r.id) as total_respuestas
+    FROM encuestas e
+    JOIN preguntas p ON e.id = p.encuesta_id
+    JOIN respuestas r ON p.id = r.pregunta_id
+    JOIN usuarios u ON e.empresa_id = u.id
+    WHERE 1=1
+      ${whereSector}
+    GROUP BY e.id, e.titulo
+    ${havingTipo}
+    ORDER BY e.id;
+  `;
+
+  try {
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: "Error al obtener estadísticas globales" });
   }
 });
 
