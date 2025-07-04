@@ -6,50 +6,92 @@ import pool from "../db.js";
 
 const router = express.Router();
 
-// GET /api/stats/global
-// Devuelve las estadísticas agregadas para cada tipo de instrumento (encuesta)
-// a través de todas las empresas.
+/**
+ * GET /api/stats/global
+ * Estadísticas agregadas globales de todas las encuestas (por título).
+ */
 router.get("/global", async (req, res) => {
   try {
-    // Esta consulta es el corazón de la nueva funcionalidad.
-    // Para cada tipo de encuesta (agrupado por título), calcula:
-    // - total_respuestas: Cuántas veces se ha respondido en total.
-    // - promedio: La puntuación media.
-    // - desviacion_estandar: Mide la dispersión de las respuestas. Un valor bajo
-    //   significa que la mayoría de las empresas puntuaron de forma similar.
-    // - varianza: Es la desviación estándar al cuadrado.
-    // - minimo y maximo: Los puntajes más bajo y más alto registrados.
-    const statsQuery = `
-      SELECT 
-        e.titulo,
-        COUNT(r.id) AS total_respuestas,
-        AVG(CAST(r.valor AS NUMERIC)) AS promedio,
-        STDDEV_SAMP(CAST(r.valor AS NUMERIC)) AS desviacion_estandar,
-        VAR_SAMP(CAST(r.valor AS NUMERIC)) AS varianza,
-        MIN(CAST(r.valor AS NUMERIC)) AS minimo,
-        MAX(CAST(r.valor AS NUMERIC)) AS maximo
-      FROM encuestas e
-      JOIN preguntas p ON e.id = p.encuesta_id
-      JOIN respuestas r ON p.id = r.pregunta_id
+    const result = await pool.query(`
+      SELECT
+        e.titulo                      AS encuesta,
+        COUNT(r.id)                  AS total_respuestas,
+        ROUND(AVG(r.valor)::numeric, 2)     AS promedio,
+        ROUND(VAR_SAMP(r.valor)::numeric, 2) AS varianza,
+        ROUND(STDDEV_SAMP(r.valor)::numeric, 2) AS desviacion_estandar
+      FROM respuestas r
+      JOIN preguntas p  ON p.id = r.pregunta_id
+      JOIN encuestas e  ON e.id = p.encuesta_id
       GROUP BY e.titulo
       ORDER BY e.titulo;
-    `;
+    `);
 
-    const result = await pool.query(statsQuery);
-
-    // Formateamos los números para que sean más legibles en el frontend
-    const formattedResults = result.rows.map(row => ({
-      ...row,
-      promedio: parseFloat(row.promedio || 0).toFixed(2),
-      desviacion_estandar: parseFloat(row.desviacion_estandar || 0).toFixed(2),
-      varianza: parseFloat(row.varianza || 0).toFixed(2),
+    const formatted = result.rows.map(row => ({
+      encuesta: row.encuesta,
+      total_respuestas: Number(row.total_respuestas),
+      promedio:           Number(row.promedio)           || 0,
+      varianza:           Number(row.varianza)           || 0,
+      desviacion_estandar: Number(row.desviacion_estandar) || 0
     }));
 
-    res.json(formattedResults);
-
+    res.json(formatted);
   } catch (err) {
-    console.error("Error al obtener estadísticas globales:", err);
-    res.status(500).json({ error: "Error del servidor al calcular estadísticas globales" });
+    console.error("Error estadísticas globales:", err);
+    res.status(500).json({ error: "Error al calcular estadísticas globales" });
+  }
+});
+
+/**
+ * GET /api/stats/encuesta/:encuestaId
+ * Estadísticas detalladas por pregunta de una encuesta concreta.
+ */
+router.get("/encuesta/:encuestaId", async (req, res) => {
+  const encuestaId = Number(req.params.encuestaId);
+  if (isNaN(encuestaId)) {
+    return res.status(400).json({ error: "ID de encuesta inválido" });
+  }
+  try {
+    const q = await pool.query(`
+      SELECT
+        p.id               AS questionId,
+        p.texto            AS questionText,
+        ROUND(AVG(r.valor)::numeric, 2)     AS avgScore,
+        ROUND(VAR_SAMP(r.valor)::numeric, 2) AS variance,
+        ROUND(STDDEV_SAMP(r.valor)::numeric, 2) AS stddev
+      FROM respuestas r
+      JOIN preguntas p ON p.id = r.pregunta_id
+      WHERE p.encuesta_id = $1
+      GROUP BY p.id, p.texto
+      ORDER BY p.id;
+    `, [encuestaId]);
+
+    const overall = await pool.query(`
+      SELECT
+        ROUND(AVG(r.valor)::numeric, 2)     AS overallAvg,
+        ROUND(VAR_SAMP(r.valor)::numeric, 2) AS overallVariance,
+        ROUND(STDDEV_SAMP(r.valor)::numeric, 2) AS overallStddev
+      FROM respuestas r
+      JOIN preguntas p ON p.id = r.pregunta_id
+      WHERE p.encuesta_id = $1;
+    `, [encuestaId]);
+
+    const avg = Number(overall.rows[0].overallavg) || 0;
+    const status = avg < 2  ? 'deficiente'
+                 : avg > 4  ? 'fortaleza'
+                 : 'normal';
+
+    res.json({
+      questionStats: q.rows,
+      overall: {
+        overallAvg:      avg,
+        overallVariance: Number(overall.rows[0].overallvariance) || 0,
+        overallStddev:   Number(overall.rows[0].overallstddev)   || 0,
+        status
+      }
+    });
+  } catch (err) {
+    console.error("Error stats por encuesta:", err);
+    res.status(500).json({ error: "Error al calcular estadísticas de encuesta" });
   }
 });
 

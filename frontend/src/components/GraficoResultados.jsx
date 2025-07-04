@@ -1,4 +1,4 @@
-import React from 'react'; 
+import React from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -19,7 +19,19 @@ ChartJS.register(
   Legend
 );
 
-function GraficoResultados({ titulo, datos }) {
+/**
+ * Permite usar:
+ * <GraficoResultados labels values title />
+ * o
+ * <GraficoResultados titulo datos />
+ */
+function GraficoResultados(props) {
+  // Compatibilidad con ambos formatos de props
+  const labels = props.labels || (props.datos && props.datos.labels) || [];
+  const values = props.values || (props.datos && props.datos.values) || [];
+  const title = props.title || props.titulo || '';
+
+  // Coloreo condicional
   const getBackgroundColor = (value) => {
     if (value < 2) return 'rgba(239, 68, 68, 0.6)'; // Rojo (Deficiencia)
     if (value > 4) return 'rgba(34, 197, 94, 0.6)'; // Verde (Fortaleza)
@@ -31,15 +43,15 @@ function GraficoResultados({ titulo, datos }) {
     if (value > 4) return 'rgba(34, 197, 94, 1)';
     return 'rgba(59, 130, 246, 1)';
   };
-  
+
   const chartData = {
-    labels: datos.labels,
+    labels,
     datasets: [
       {
-        label: 'Promedio',
-        data: datos.values,
-        backgroundColor: datos.values.map(value => getBackgroundColor(parseFloat(value))),
-        borderColor: datos.values.map(value => getBorderColor(parseFloat(value))),
+        label: title || 'Promedio',
+        data: values,
+        backgroundColor: values.map(value => getBackgroundColor(parseFloat(value))),
+        borderColor: values.map(value => getBorderColor(parseFloat(value))),
         borderWidth: 1,
         borderRadius: 5,
         barPercentage: 0.6,
@@ -53,8 +65,8 @@ function GraficoResultados({ titulo, datos }) {
     plugins: {
       legend: { display: false },
       title: {
-        display: true,
-        text: titulo,
+        display: !!title,
+        text: title,
         font: { size: 18 },
         padding: { top: 10, bottom: 30 }
       },

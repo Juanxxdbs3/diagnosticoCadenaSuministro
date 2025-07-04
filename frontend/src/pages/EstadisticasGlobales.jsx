@@ -1,6 +1,7 @@
 // Archivo a crear: frontend/src/pages/EstadisticasGlobales.jsx
 
 import React, { useState, useEffect } from 'react';
+import { fetchGlobalStats } from '../services/stats';
 import axios from 'axios';
 import GraficoResultados from '../components/GraficoResultados';
 
@@ -9,27 +10,38 @@ function EstadisticasGlobales() {
   const [sectores, setSectores] = useState([]);
   const [sector, setSector] = useState('');
   const [tipo, setTipo] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Cargar sectores únicos
   useEffect(() => {
-    axios.get('/api/sectores').then(res => setSectores(res.data));
+    axios.get('/api/sectores')
+      .then(res => setSectores(res.data))
+      .catch(() => setSectores([]));
   }, []);
 
+  // Cargar estadísticas globales con filtros
   useEffect(() => {
-    let url = '/api/stats/global?';
-    if (sector) url += `sector=${encodeURIComponent(sector)}&`;
-    if (tipo) url += `tipo=${tipo}`;
-    axios.get(url).then(res => setStats(res.data));
+    setLoading(true);
+    setError('');
+    fetchGlobalStats({ sector, tipo })
+      .then(res => setStats(res.data))
+      .catch(() => {
+        setError('No se pudieron cargar las estadísticas globales.');
+        setStats([]);
+      })
+      .finally(() => setLoading(false));
   }, [sector, tipo]);
 
-  // Calcula el promedio general de los instrumentos filtrados
-  const promedioGeneral = stats.length
-    ? (stats.reduce((acc, curr) => acc + parseFloat(curr.promedio), 0) / stats.length).toFixed(2)
+  // Adaptar datos para el gráfico y la tabla
+  const labels = stats.map(item => item.instrumento_titulo || item.encuesta);
+  const values = stats.map(item => parseFloat(item.promedio));
+  const promedioGeneral = values.length
+    ? (values.reduce((acc, curr) => acc + curr, 0) / values.length).toFixed(2)
     : '-';
 
-  const chartData = {
-    labels: stats.map(item => item.instrumento_titulo),
-    values: stats.map(item => parseFloat(item.promedio)),
-  };
+  if (loading) return <p className="p-8 text-center">Cargando estadísticas globales...</p>;
+  if (error) return <p className="p-8 text-center text-red-600">{error}</p>;
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -61,7 +73,11 @@ function EstadisticasGlobales() {
         {/* Gráfico de Promedios */}
         <section className="bg-white p-6 rounded-xl shadow-lg mb-10">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Comparativa de Promedios por Instrumento</h2>
-          <GraficoResultados datos={chartData} titulo="" />
+          <GraficoResultados
+            labels={labels}
+            values={values}
+            title="Promedio por Encuesta"
+          />
         </section>
 
         {/* Tabla de Estadísticas Detalladas */}
@@ -81,16 +97,16 @@ function EstadisticasGlobales() {
                 </tr>
               </thead>
               <tbody>
-                {stats.map((item) => (
-                  <tr key={item.instrumento_id} className="border-b hover:bg-gray-50">
+                {stats.map((item, idx) => (
+                  <tr key={item.instrumento_id || item.encuesta || idx} className="border-b hover:bg-gray-50">
                     <th scope="row" className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                      {item.instrumento_titulo}
+                      {item.instrumento_titulo || item.encuesta}
                     </th>
                     <td className="px-6 py-4 text-center font-bold">{parseFloat(item.promedio).toFixed(2)}</td>
-                    <td className="px-6 py-4 text-center">{item.desviacion_estandar ? parseFloat(item.desviacion_estandar).toFixed(2) : '-'}</td>
-                    <td className="px-6 py-4 text-center">{item.varianza ? parseFloat(item.varianza).toFixed(2) : '-'}</td>
-                    <td className="px-6 py-4 text-center">{item.minimo}</td>
-                    <td className="px-6 py-4 text-center">{item.maximo}</td>
+                    <td className="px-6 py-4 text-center">{item.desviacion_estandar !== undefined ? parseFloat(item.desviacion_estandar).toFixed(2) : '-'}</td>
+                    <td className="px-6 py-4 text-center">{item.varianza !== undefined ? parseFloat(item.varianza).toFixed(2) : '-'}</td>
+                    <td className="px-6 py-4 text-center">{item.minimo !== undefined ? item.minimo : '-'}</td>
+                    <td className="px-6 py-4 text-center">{item.maximo !== undefined ? item.maximo : '-'}</td>
                     <td className="px-6 py-4 text-center">{item.total_respuestas}</td>
                   </tr>
                 ))}
