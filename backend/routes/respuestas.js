@@ -6,23 +6,49 @@ const router = express.Router();
 
 // POST /api/respuestas
 router.post("/", protect, async (req, res) => {
-  const { encuestado_id, respuestas } = req.body;
+  // Soporta respuestas normales, de matriz y de matriz múltiple en un solo endpoint
+  const {
+    encuestado_id,
+    respuestas = [],
+    respuestas_matriz = [],
+    respuestas_matriz_multiple = []
+  } = req.body;
 
-  if (!encuestado_id || !Array.isArray(respuestas)) {
-    return res.status(400).json({ error: "Datos incompletos para guardar respuestas." });
+  if (!encuestado_id) {
+    return res.status(400).json({ error: "Falta el encuestado_id." });
   }
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
+    // Guardar respuestas normales
     for (const r of respuestas) {
       const { pregunta_id, texto, opcion_id = null } = r;
-
       await client.query(
         `INSERT INTO respuestas (encuestado_id, pregunta_id, texto, opcion_id, fecha_respuesta)
          VALUES ($1, $2, $3, $4, NOW())`,
         [encuestado_id, pregunta_id, texto, opcion_id]
+      );
+    }
+
+    // Guardar respuestas de matriz
+    for (const r of respuestas_matriz) {
+      const { pregunta_id, item_id, texto, opcion_id = null } = r;
+      await client.query(
+        `INSERT INTO respuestas_matriz (encuestado_id, pregunta_id, item_id, texto, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, $5, NOW())`,
+        [encuestado_id, pregunta_id, item_id, texto, opcion_id]
+      );
+    }
+
+    // Guardar respuestas de matriz múltiple
+    for (const r of respuestas_matriz_multiple) {
+      const { pregunta_id, item_id, opcion_id } = r;
+      await client.query(
+        `INSERT INTO respuestas_matriz_multiple (encuestado_id, pregunta_id, item_id, opcion_id, fecha_respuesta)
+         VALUES ($1, $2, $3, $4, NOW())`,
+        [encuestado_id, pregunta_id, item_id, opcion_id]
       );
     }
 
@@ -32,72 +58,6 @@ router.post("/", protect, async (req, res) => {
     await client.query("ROLLBACK");
     console.error("Error al guardar respuestas:", error);
     res.status(500).json({ error: "Error al guardar respuestas." });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/respuestas/matriz
-router.post("/matriz", protect, async (req, res) => {
-  const { encuestado_id, respuestas } = req.body;
-
-  if (!encuestado_id || !Array.isArray(respuestas)) {
-    return res.status(400).json({ error: "Datos incompletos para guardar respuestas de matriz." });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    for (const r of respuestas) {
-      const { pregunta_id, item_id, texto, opcion_id = null } = r;
-
-      await client.query(
-        `INSERT INTO respuestas_matriz (encuestado_id, pregunta_id, item_id, texto, opcion_id, fecha_respuesta)
-         VALUES ($1, $2, $3, $4, $5, NOW())`,
-        [encuestado_id, pregunta_id, item_id, texto, opcion_id]
-      );
-    }
-
-    await client.query("COMMIT");
-    res.status(201).json({ mensaje: "Respuestas de matriz guardadas correctamente." });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al guardar respuestas de matriz:", error);
-    res.status(500).json({ error: "Error al guardar respuestas de matriz." });
-  } finally {
-    client.release();
-  }
-});
-
-// POST /api/respuestas/matriz-multiple
-router.post("/matriz-multiple", protect, async (req, res) => {
-  const { encuestado_id, respuestas } = req.body;
-
-  if (!encuestado_id || !Array.isArray(respuestas)) {
-    return res.status(400).json({ error: "Datos incompletos para guardar respuestas de matriz múltiple." });
-  }
-
-  const client = await pool.connect();
-  try {
-    await client.query("BEGIN");
-
-    for (const r of respuestas) {
-      const { pregunta_id, item_id, opcion_id } = r;
-
-      await client.query(
-        `INSERT INTO respuestas_matriz_multiple (encuestado_id, pregunta_id, item_id, opcion_id, fecha_respuesta)
-         VALUES ($1, $2, $3, $4, NOW())`,
-        [encuestado_id, pregunta_id, item_id, opcion_id]
-      );
-    }
-
-    await client.query("COMMIT");
-    res.status(201).json({ mensaje: "Respuestas de matriz múltiple guardadas correctamente." });
-  } catch (error) {
-    await client.query("ROLLBACK");
-    console.error("Error al guardar respuestas de matriz múltiple:", error);
-    res.status(500).json({ error: "Error al guardar respuestas de matriz múltiple." });
   } finally {
     client.release();
   }
