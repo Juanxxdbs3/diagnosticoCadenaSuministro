@@ -1,10 +1,11 @@
 import express from "express";
 import pool from "../db.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // POST /api/respuestas
-router.post("/", async (req, res) => {
+router.post("/", protect, async (req, res) => {
   const { encuestado_id, respuestas } = req.body;
 
   if (!encuestado_id || !Array.isArray(respuestas)) {
@@ -37,7 +38,7 @@ router.post("/", async (req, res) => {
 });
 
 // POST /api/respuestas/matriz
-router.post("/matriz", async (req, res) => {
+router.post("/matriz", protect, async (req, res) => {
   const { encuestado_id, respuestas } = req.body;
 
   if (!encuestado_id || !Array.isArray(respuestas)) {
@@ -70,7 +71,7 @@ router.post("/matriz", async (req, res) => {
 });
 
 // POST /api/respuestas/matriz-multiple
-router.post("/matriz-multiple", async (req, res) => {
+router.post("/matriz-multiple", protect, async (req, res) => {
   const { encuestado_id, respuestas } = req.body;
 
   if (!encuestado_id || !Array.isArray(respuestas)) {
@@ -105,7 +106,7 @@ router.post("/matriz-multiple", async (req, res) => {
 // === NUEVOS ENDPOINTS DE ESTADÍSTICAS ===
 
 // 1. Estadísticas generales de una encuesta (instrumento)
-router.get("/stats/:encuestaId", async (req, res) => {
+router.get("/stats/:encuestaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
   const { encuestaId } = req.params;
   try {
     const statsPorPregunta = await pool.query(`
@@ -141,7 +142,7 @@ router.get("/stats/:encuestaId", async (req, res) => {
 });
 
 // 2. Estadísticas de una pregunta específica
-router.get("/stats/pregunta/:preguntaId", async (req, res) => {
+router.get("/stats/pregunta/:preguntaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
     const { preguntaId } = req.params;
     try {
         const stats = await pool.query(`
@@ -164,7 +165,7 @@ router.get("/stats/pregunta/:preguntaId", async (req, res) => {
 
 
 // 3. Generar datos de prueba (muy útil para desarrollo)
-router.post("/generar-datos-prueba/:encuestaId", async (req, res) => {
+router.post("/generar-datos-prueba/:encuestaId", protect, authorize('admin'), async (req, res) => {
     const { encuestaId } = req.params;
     const { cantidad = 5 } = req.body; // Genera 5 respuestas por pregunta por defecto
     

@@ -1,11 +1,22 @@
 import express from "express";
 import pool from "../db.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Endpoint principal para obtener los resultados consolidados de una empresa
-router.get("/encuestado/:encuestadoId", async (req, res) => {
+// Ver resultados de una empresa (solo esa empresa, admin o evaluador)
+router.get("/encuestado/:encuestadoId", protect, async (req, res) => {
   const { encuestadoId } = req.params;
+  const user = req.user;
+
+  // Permitir si es admin/evaluador o si es la propia empresa
+  if (
+    user.rol !== 'admin' &&
+    user.rol !== 'evaluador' &&
+    !(user.rol === 'empresa' && String(user.id) === String(encuestadoId))
+  ) {
+    return res.status(403).json({ error: "No autorizado para ver estos resultados" });
+  }
 
   try {
     // Obtener nombre del encuestado
@@ -59,8 +70,8 @@ router.get("/encuestado/:encuestadoId", async (req, res) => {
   }
 });
 
-// Obtener todos los sectores únicos
-router.get("/sectores", async (req, res) => {
+// Obtener todos los sectores únicos (solo autenticados)
+router.get("/sectores", protect, async (req, res) => {
   try {
     const result = await pool.query('SELECT DISTINCT sector FROM usuarios WHERE sector IS NOT NULL');
     res.json(result.rows.map(r => r.sector));
@@ -69,8 +80,8 @@ router.get("/sectores", async (req, res) => {
   }
 });
 
-// Estadísticas globales con filtros por sector y tipo (deficiencia/fortaleza)
-router.get("/stats/global", async (req, res) => {
+// Estadísticas globales (solo admin/evaluador)
+router.get("/stats/global", protect, authorize('admin', 'evaluador'), async (req, res) => {
   const { sector, tipo } = req.query;
   let params = [];
   let whereSector = '';

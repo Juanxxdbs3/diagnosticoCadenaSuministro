@@ -3,6 +3,7 @@
 
 import express from "express";
 import pool from "../db.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -10,7 +11,7 @@ const router = express.Router();
  * GET /api/stats/global
  * Estadísticas agregadas globales de todas las encuestas (por título).
  */
-router.get("/global", async (req, res) => {
+router.get("/global", protect, authorize('admin', 'evaluador'), async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -45,7 +46,7 @@ router.get("/global", async (req, res) => {
  * GET /api/stats/encuesta/:encuestaId
  * Estadísticas detalladas por pregunta de una encuesta concreta.
  */
-router.get("/encuesta/:encuestaId", async (req, res) => {
+router.get("/encuesta/:encuestaId", protect, authorize('admin', 'evaluador'), async (req, res) => {
   const encuestaId = Number(req.params.encuestaId);
   if (isNaN(encuestaId)) {
     return res.status(400).json({ error: "ID de encuesta inválido" });

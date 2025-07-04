@@ -1,10 +1,11 @@
 import express from "express";
 import pool from "../db.js";
+import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Obtener todas las preguntas de la encuesta
-router.get("/preguntas/:id", async (req, res) => {
+router.get("/preguntas/:id", protect, async (req, res) => {
   const encuestaId = req.params.id;
 
   try {
@@ -71,7 +72,7 @@ router.get("/preguntas/:id", async (req, res) => {
 });
 
 // Registrar nuevas preguntas
-router.post("/", async (req, res) => {
+router.post("/", protect, authorize('admin', 'evaluador'), async (req, res) => {
   const { encuestaId, claves } = req.body;
 
   try {
