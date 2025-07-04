@@ -42,6 +42,27 @@ function EstadisticasGlobales() {
 
   if (loading) return <p className="p-8 text-center">Cargando estadísticas globales...</p>;
   if (error) return <p className="p-8 text-center text-red-600">{error}</p>;
+  if (!stats || stats.length === 0) {
+    return (
+      <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto">
+          <header className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">Estadísticas Globales</h1>
+            <p className="text-lg text-gray-600">Análisis consolidado de todos los instrumentos y empresas.</p>
+          </header>
+          <section className="bg-white p-6 rounded-xl shadow-lg mb-10">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">Comparativa de Promedios por Instrumento</h2>
+            <GraficoResultados
+              labels={["Sin datos"]}
+              values={[0]}
+              title="Promedio por Encuesta"
+            />
+            <p className="text-center text-gray-500 mt-4">Aún no se han registrado respuestas para las encuestas.</p>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
