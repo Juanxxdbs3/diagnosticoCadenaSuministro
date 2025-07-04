@@ -48,23 +48,44 @@ const ResponderEncuesta = () => {
     setFunc([...filtradas, nueva]);
   };
 
-  const handleNext = () => {
+  const enviarDatosEncuestado = async () => {
+    try {
+      const res = await axios.post("http://localhost:3001/api/encuestados", datosEncuestado);
+      setEncuestadoId(res.data.encuestado_id);
+      return res.data.encuestado_id;
+    } catch (err) {
+      console.error("Error al registrar encuestado", err);
+      alert("Error al enviar los datos. Revisa el formulario.");
+      throw err;
+    }
+  };
+  
+  const handleNext = async () => {
     if (indice < preguntas.length - 1) {
       setIndice(indice + 1);
     } else {
-      enviarDatosEncuestado();
-      enviarRespuestas();
-      navigate("/descripcionEncuestas");
+      if (!validarRespuestasCompletas()) {
+        alert("Por favor responde todas las preguntas antes de finalizar.");
+        return;
+      }
+      
+      try {
+        const id = encuestadoId || await enviarDatosEncuestado();
+        await enviarRespuestas(id);
+        navigate("/descripcionEncuestas");
+      } catch (err) {
+        console.error("Error finalizando encuesta", err);
+      }
     }
   };
-
-  const enviarRespuestas = async () => {
+  
+  const enviarRespuestas = async (encuestado_id) => {
     try {
       await axios.post("http://localhost:3001/api/respuestas", {
-        encuestado_id: encuestadoId,
+        encuestado_id,
         respuestas,
         respuestas_matriz: respuestasMatriz,
-        respuestas_matriz_multiple: respuestasMatrizMultiple
+        respuestas_matriz_multiple: respuestasMatrizMultiple,
       });
       alert("¡Respuestas enviadas con éxito!");
     } catch (err) {
@@ -73,15 +94,20 @@ const ResponderEncuesta = () => {
     }
   };
 
-  const enviarDatosEncuestado = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await axios.post("http://localhost:3001/api/encuestados", datosEncuestado);
-      setEncuestadoId(res.data.encuestado_id);
-    } catch (err) {
-      console.error("Error al registrar encuestado", err);
-      alert("Error al enviar los datos. Revisa el formulario.");
+  const validarRespuestasCompletas = () => {
+    for (const pregunta of preguntas) {
+      if (pregunta.tipo === "matriz_escala" || pregunta.tipo === "matriz_opcion_multiple") {
+        const respuestasActuales = pregunta.tipo === "matriz_escala" ? respuestasMatriz : respuestasMatrizMultiple;
+        for (const item of pregunta.items) {
+          const respondido = respuestasActuales.find(r => r.item_matriz_id === item.id);
+          if (!respondido) return false;
+        }
+      } else {
+        const respondido = respuestas.find(r => r.pregunta_id === pregunta.id);
+        if (!respondido || (!respondido.texto && !respondido.opcion_id)) return false;
+      }
     }
+    return true;
   };
 
   if (!flag) {
