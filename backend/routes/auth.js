@@ -7,15 +7,15 @@ const router = express.Router();
 
 // POST /api/login
 router.post("/", async (req, res) => {
-  const { email, password } = req.body;
+  const { id, password } = req.body;
 
-  if (!email || !password) {
-    return res.status(400).json({ message: "Por favor, proporciona email y contraseña" });
+  if (!id || !password) {
+    return res.status(400).json({ message: "Por favor, proporciona id y contraseña" });
   }
 
   try {
     // Buscar usuario por email
-    const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+    const result = await pool.query("SELECT * FROM usuarios WHERE id = $1", [id]);
     if (result.rows.length === 0) {
       return res.status(401).json({ message: "Credenciales incorrectas" });
     }
