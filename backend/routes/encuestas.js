@@ -7,7 +7,7 @@
 */
 import express from "express";
 import pool from "../db.js";
-import { protect, authorize } from '../middleware/authMiddleware.js';
+//import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
 });
 
 // Ruta protegida para crear una nueva encuesta (solo admin/evaluador)
-router.post("/", protect, authorize('admin', 'evaluador'), async (req, res) => {
+router.post("/", async (req, res) => {
   // Se recibe solo el 'titulo'
   const { titulo } = req.body;
 

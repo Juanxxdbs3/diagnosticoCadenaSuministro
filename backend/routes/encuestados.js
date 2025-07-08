@@ -1,14 +1,12 @@
 import express from "express";
 import pool from "../db.js";
-import { protect, authorize } from "../middleware/authMiddleware.js";
+//import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
 // Registrar nuevo encuestado (solo admin)
 router.post(
   "/encuestados",
-  protect,
-  authorize("admin"),
   async (req, res) => {
     const { empresaId, sector, nombreEncuestado, email, telefono } = req.body;
 

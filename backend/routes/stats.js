@@ -3,7 +3,7 @@
 
 import express from "express";
 import pool from "../db.js";
-import { protect, authorize } from "../middleware/authMiddleware.js";
+//import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -11,7 +11,7 @@ const router = express.Router();
  * GET /api/stats/global
  * Estadísticas agregadas globales de todas las encuestas (por título).
  */
-router.get("/global", protect, authorize('admin', 'evaluador'), async (req, res) => {
+router.get("/global", async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT
@@ -46,7 +46,7 @@ router.get("/global", protect, authorize('admin', 'evaluador'), async (req, res)
  * GET /api/stats/encuesta/:encuestaId
  * Estadísticas detalladas por pregunta de una encuesta concreta.
  */
-router.get("/encuesta/:encuestaId", protect, async (req, res) => {
+router.get("/encuesta/:encuestaId", async (req, res) => {
   const encuestaId = Number(req.params.encuestaId);
   if (isNaN(encuestaId)) {
     return res.status(400).json({ error: "ID de encuesta inválido" });
@@ -67,13 +67,13 @@ router.get("/encuesta/:encuestaId", protect, async (req, res) => {
     // - Es admin o evaluador
     // - O es empresa y es la dueña de la encuesta
     const user = req.user;
-    if (
+    /*if (
       user.rol !== 'admin' &&
       user.rol !== 'evaluador' &&
       !(user.rol === 'empresa' && String(user.id) === String(empresaId))
     ) {
       return res.status(403).json({ error: "No autorizado para ver estadísticas de esta encuesta" });
-    }
+    }*/
 
     // 3. Obtener estadísticas (igual que antes)
     const q = await pool.query(`
