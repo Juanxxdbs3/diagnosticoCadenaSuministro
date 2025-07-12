@@ -1,14 +1,15 @@
 import express from "express";
 import pool from "../db.js";
-//import { authorize, protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// Obtener todas las preguntas de la encuesta
-router.get("/preguntas/:id", async (req, res) => {
+// ⚡ CAMBIO: Quitar "preguntas" del path, solo usar "/:id"
+router.get("/:id", async (req, res) => {
   const encuestaId = req.params.id;
 
   try {
+    console.log("🔍 [BACKEND] Obteniendo preguntas para encuesta:", encuestaId);
+    
     // Obtener todas las preguntas de la encuesta
     const preguntasResult = await pool.query(
       "SELECT * FROM preguntas WHERE encuesta_id = $1 ORDER BY id ASC",
@@ -64,9 +65,10 @@ router.get("/preguntas/:id", async (req, res) => {
         : [],
     }));
 
+    console.log(`✅ [BACKEND] Preguntas obtenidas: ${preguntasConDatos.length} para encuesta ${encuestaId}`);
     res.json(preguntasConDatos);
   } catch (error) {
-    console.error("Error al obtener preguntas:", error);
+    console.error("❌ [BACKEND] Error al obtener preguntas:", error);
     res.status(500).json({ error: "Error al obtener preguntas" });
   }
 });
@@ -76,6 +78,8 @@ router.post("/", async (req, res) => {
   const { encuestaId, claves } = req.body;
 
   try {
+    console.log("📝 [BACKEND] Creando preguntas para encuesta:", encuestaId);
+    
     const preguntaIds = [];
 
     for (let texto of claves) {
@@ -86,9 +90,10 @@ router.post("/", async (req, res) => {
       preguntaIds.push(result.rows[0].id);
     }
 
+    console.log(`✅ [BACKEND] Preguntas creadas: ${preguntaIds.length}`);
     res.status(201).json({ preguntaIds });
   } catch (err) {
-    console.error("Error al insertar preguntas", err);
+    console.error("❌ [BACKEND] Error al insertar preguntas:", err);
     res.status(500).json({ error: "Error al insertar preguntas" });
   }
 });

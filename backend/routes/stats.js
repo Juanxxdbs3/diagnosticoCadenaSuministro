@@ -3,15 +3,19 @@
 
 import express from "express";
 import pool from "../db.js";
+import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
+// ⚡ PROTEGER: Solo usuarios logueados pueden ver estadísticas
+router.use(protect);
+
 /**
- * GET /api/stats/global
+ * GET /api/stats/global - Solo admin y evaluador
  */
-router.get("/global", async (req, res) => {
+router.get("/global", authorize("admin", "evaluador"), async (req, res) => {
   try {
-    console.log("📊 [BACKEND] Obteniendo estadísticas globales...");
+    console.log(`📊 [BACKEND] ${req.user.email} (${req.user.rol}) solicitando stats globales`);
     
     const result = await pool.query(`
       SELECT
@@ -28,17 +32,8 @@ router.get("/global", async (req, res) => {
       ORDER BY e.titulo;
     `);
 
-    console.log("✅ [BACKEND] Estadísticas globales obtenidas:", result.rows);
-
-    const formatted = result.rows.map(row => ({
-      encuesta: row.encuesta,
-      total_respuestas: Number(row.total_respuestas),
-      promedio: Number(row.promedio) || 0,
-      varianza: Number(row.varianza) || 0,
-      desviacion_estandar: Number(row.desviacion_estandar) || 0
-    }));
-
-    res.json(formatted);
+    console.log("✅ [BACKEND] Estadísticas globales obtenidas:", result.rows.length);
+    res.json(result.rows);
   } catch (err) {
     console.error("❌ [BACKEND] Error estadísticas globales:", err);
     res.status(500).json({ error: "Error al calcular estadísticas globales" });
@@ -46,9 +41,48 @@ router.get("/global", async (req, res) => {
 });
 
 /**
+ * GET /api/stats/empresa/:empresaId - Solo para la empresa específica
+ */
+router.get("/empresa/:empresaId", async (req, res) => {
+  const empresaId = Number(req.params.empresaId);
+  
+  // Verificar que el usuario puede ver esta empresa
+  if (req.user.rol === "empresa" && req.user.id !== empresaId) {
+    return res.status(403).json({ error: "Solo puedes ver tus propias estadísticas" });
+  }
+
+  try {
+    console.log(`📊 [BACKEND] ${req.user.email} solicitando stats de empresa ${empresaId}`);
+    
+    const result = await pool.query(`
+      SELECT
+        e.titulo                                    AS encuesta,
+        COUNT(r.id)                                AS total_respuestas,
+        COALESCE(ROUND(AVG(o.valor)::numeric, 2), 0)     AS promedio,
+        COALESCE(ROUND(VAR_SAMP(o.valor)::numeric, 2), 0) AS varianza,
+        COALESCE(ROUND(STDDEV_SAMP(o.valor)::numeric, 2), 0) AS desviacion_estandar
+      FROM respuestas r
+      JOIN preguntas p ON p.id = r.pregunta_id
+      JOIN encuestas e ON e.id = p.encuesta_id
+      JOIN opciones o ON o.id = r.opcion_id
+      JOIN encuestados enc ON enc.id = r.encuestado_id
+      WHERE enc.empresa_id = $1
+      GROUP BY e.titulo
+      ORDER BY e.titulo;
+    `, [empresaId]);
+
+    console.log(`✅ [BACKEND] Stats empresa ${empresaId} obtenidas:`, result.rows.length);
+    res.json(result.rows);
+  } catch (err) {
+    console.error("❌ [BACKEND] Error stats empresa:", err);
+    res.status(500).json({ error: "Error al calcular estadísticas de empresa" });
+  }
+});
+
+/**
  * GET /api/stats/encuesta/:encuestaId
  */
-router.get("/encuesta/:encuestaId", async (req, res) => {
+router.get("/encuesta/:encuestaId", authorize("admin", "evaluador"), async (req, res) => {
   const encuestaId = Number(req.params.encuestaId);
   console.log("📊 [BACKEND] Obteniendo stats para encuesta:", encuestaId);
 

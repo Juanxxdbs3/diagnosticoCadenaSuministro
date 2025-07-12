@@ -2,50 +2,68 @@
  JWT sea válido y que el usuario tenga los permisos necesarios.
 --------------------------------------------------------------------------------
 */
-import jwt from 'jsonwebtoken';
+import jwt from "jsonwebtoken";
+import pool from "../db.js";
 
-// Middleware para proteger rutas verificando el token
-export const protect = (req, res, next) => {
+// Middleware para verificar token
+export const protect = async (req, res, next) => {
   let token;
 
-  // El token se envía en el encabezado de autorización con el formato "Bearer <token>"
-  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
     try {
-      // 1. Extraer el token del encabezado
-      token = req.headers.authorization.split(' ')[1];
-
-      // 2. Verificar la firma del token usando la clave secreta
+      // Extraer token
+      token = req.headers.authorization.split(" ")[1];
+      
+      // Verificar token
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-
-      // 3. Añadir los datos del usuario (decodificados del token) al objeto 'req'
-      // para que las rutas posteriores tengan acceso a ellos.
-      // ¡IMPORTANTE! No estamos incluyendo la contraseña.
-      req.user = {
-        id: decoded.id,
-        rol: decoded.rol
-      };
-
-      next(); // El token es válido, continuar a la siguiente función (la ruta solicitada)
+      
+      // Buscar usuario
+      const result = await pool.query("SELECT id, nombre, email, rol FROM usuarios WHERE id = $1", [decoded.id]);
+      
+      if (result.rows.length === 0) {
+        return res.status(401).json({ message: "Token inválido" });
+      }
+      
+      req.user = result.rows[0];
+      next();
     } catch (error) {
-      console.error('Error al verificar el token:', error);
-      res.status(401).json({ message: 'No autorizado, token inválido' });
+      console.error("Error en protect middleware:", error);
+      return res.status(401).json({ message: "Token inválido" });
     }
-  }
-
-  if (!token) {
-    res.status(401).json({ message: 'No autorizado, no se proporcionó un token' });
+  } else {
+    return res.status(401).json({ message: "No hay token, acceso denegado" });
   }
 };
 
-// Middleware para autorizar por rol
-// Se usa DESPUÉS del middleware 'protect'
+// Middleware para verificar roles específicos
 export const authorize = (...roles) => {
   return (req, res, next) => {
-    // 'protect' ya debe haber añadido 'req.user'
-    if (!req.user || !roles.includes(req.user.rol)) {
-      // El rol del usuario no está en la lista de roles permitidos
-      return res.status(403).json({ message: 'No tienes permiso para realizar esta acción' });
+    if (!req.user) {
+      return res.status(401).json({ message: "No autorizado" });
     }
-    next(); // El usuario tiene el rol correcto, continuar.
+
+    if (!roles.includes(req.user.rol)) {
+      return res.status(403).json({ message: `Acceso denegado. Se requiere rol: ${roles.join(" o ")}` });
+    }
+
+    next();
   };
+};
+
+// Middleware opcional (no falla si no hay token)
+export const optionalAuth = async (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
+    try {
+      const token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const result = await pool.query("SELECT id, nombre, email, rol FROM usuarios WHERE id = $1", [decoded.id]);
+      
+      if (result.rows.length > 0) {
+        req.user = result.rows[0];
+      }
+    } catch (error) {
+      // Ignorar errores, continuar sin usuario
+    }
+  }
+  next();
 };
