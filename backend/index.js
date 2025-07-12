@@ -8,8 +8,11 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ⚡ CAMBIO: Cargar .env desde la raíz del proyecto
+// ⚡ IMPORTANTE: Cargar .env ANTES de cualquier otra importación
 dotenv.config({ path: path.join(__dirname, '../.env') });
+
+// ⚡ VERIFICAR que JWT_SECRET se cargó
+console.log("🔑 JWT_SECRET cargado:", process.env.JWT_SECRET ? "✅ SÍ" : "❌ NO");
 
 import authRoutes from "./routes/auth.js";
 import encuestasRoutes from "./routes/encuestas.js";

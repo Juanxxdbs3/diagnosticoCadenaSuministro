@@ -1,7 +1,7 @@
 import express from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 import pool from "../db.js";
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -14,40 +14,59 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // 1. Buscar al usuario por su email
+    console.log("🔐 [BACKEND] Intento de login para:", email);
+    
+    // Buscar usuario por email
     const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
-
-    // Si no se encuentra ningún usuario con ese email
+    
     if (result.rows.length === 0) {
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+      console.log("❌ [BACKEND] Usuario no encontrado:", email);
+      return res.status(401).json({ message: "Credenciales inválidas" });
     }
 
     const user = result.rows[0];
+    console.log("✅ [BACKEND] Usuario encontrado:", user.email, "Rol:", user.rol);
 
-    // 2. Comparar la contraseña proporcionada con la hasheada en la BD
-    // Esta es la corrección clave. Nos aseguramos de que user.password existe.
-    const isMatch = user.password ? await bcrypt.compare(password, user.password) : false;
-
-    if (!isMatch) {
-      // Si la contraseña no coincide
-      return res.status(401).json({ message: "Credenciales incorrectas" });
+    // ⚡ CAMBIO: Comparación flexible de contraseñas
+    let isMatch = false;
+    
+    // Si la contraseña está hasheada (empieza con $2b$)
+    if (user.password.startsWith('$2b$')) {
+      isMatch = await bcrypt.compare(password, user.password);
+      console.log("🔓 [BACKEND] Comparando contraseña hasheada:", isMatch);
+    } else {
+      // Si es contraseña simple (para testing)
+      isMatch = password === user.password;
+      console.log("🔓 [BACKEND] Comparando contraseña simple:", isMatch);
     }
 
-    // 3. Si las credenciales son correctas, generar el token JWT
-    const payload = {
-      id: user.id,
-      rol: user.rol,
-      nombre: user.nombre
-    };
+    if (!isMatch) {
+      console.log("❌ [BACKEND] Contraseña incorrecta");
+      return res.status(401).json({ message: "Credenciales inválidas" });
+    }
 
+    // ⚡ VERIFICAR: que JWT_SECRET existe
+    if (!process.env.JWT_SECRET) {
+      console.error("❌ [BACKEND] JWT_SECRET no está definido en .env");
+      return res.status(500).json({ error: "Error de configuración del servidor" });
+    }
+
+    // Generar token
     const token = jwt.sign(
-      payload,
+      { 
+        id: user.id, 
+        email: user.email, 
+        rol: user.rol 
+      },
       process.env.JWT_SECRET,
-      { expiresIn: '1d' } // El token expirará en 1 día
+      { expiresIn: "24h" }
     );
 
-    // 4. Enviar el token y los datos del usuario (sin la contraseña)
+    console.log("✅ [BACKEND] Token generado exitosamente");
+    console.log("🚀 [BACKEND] Login exitoso para:", user.email);
+
     res.json({
+      message: "Login exitoso",
       token,
       user: {
         id: user.id,
@@ -58,8 +77,8 @@ router.post("/", async (req, res) => {
     });
 
   } catch (err) {
-    console.error("Error en login:", err);
-    res.status(500).json({ message: "Error interno del servidor" });
+    console.error("❌ [BACKEND] Error en login:", err);
+    res.status(500).json({ error: "Error interno del servidor" });
   }
 });
 

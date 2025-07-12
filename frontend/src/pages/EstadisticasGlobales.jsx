@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { fetchGlobalStats } from '../services/stats';
-import axios from 'axios';
+import api from '../api/axios'; // ← CAMBIO: Usar tu instancia configurada
 import GraficoResultados from '../components/GraficoResultados';
 
 function EstadisticasGlobales() {
@@ -13,24 +13,41 @@ function EstadisticasGlobales() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Cargar sectores únicos
+  // ⚡ CAMBIO: Cargar sectores únicos usando api en vez de axios
   useEffect(() => {
-    axios.get('/api/sectores')
-      .then(res => setSectores(res.data))
-      .catch(() => setSectores([]));
+    console.log("🔍 [FRONTEND] Cargando sectores...");
+    api.get('/sectores') // ← Usar api en vez de axios
+      .then(res => {
+        console.log("✅ [FRONTEND] Sectores recibidos:", res.data);
+        setSectores(res.data);
+      })
+      .catch(err => {
+        console.error("❌ [FRONTEND] Error cargando sectores:", err);
+        setSectores([]);
+      });
   }, []);
 
-  // Cargar estadísticas globales con filtros
+  // ⚡ CAMBIO: Cargar estadísticas globales con mejor manejo de errores
   useEffect(() => {
+    console.log("🔍 [FRONTEND] Cargando estadísticas globales...");
     setLoading(true);
     setError('');
+    
     fetchGlobalStats({ sector, tipo })
-      .then(res => setStats(res.data))
-      .catch(() => {
+      .then(res => {
+        console.log("✅ [FRONTEND] Stats globales recibidas:", res.data);
+        setStats(res.data || []);
+      })
+      .catch(err => {
+        console.error("❌ [FRONTEND] Error cargando stats globales:", err);
+        console.error("❌ [FRONTEND] Detalles del error:", err.response?.data);
         setError('No se pudieron cargar las estadísticas globales.');
         setStats([]);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        console.log("🏁 [FRONTEND] Finalizando carga de stats globales");
+        setLoading(false);
+      });
   }, [sector, tipo]);
 
   // Adaptar datos para el gráfico y la tabla
@@ -42,6 +59,7 @@ function EstadisticasGlobales() {
 
   if (loading) return <p className="p-8 text-center">Cargando estadísticas globales...</p>;
   if (error) return <p className="p-8 text-center text-red-600">{error}</p>;
+  
   if (!stats || stats.length === 0) {
     return (
       <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
@@ -112,8 +130,6 @@ function EstadisticasGlobales() {
                   <th scope="col" className="px-6 py-3 text-center">Promedio</th>
                   <th scope="col" className="px-6 py-3 text-center">Desviación Estándar</th>
                   <th scope="col" className="px-6 py-3 text-center">Varianza</th>
-                  <th scope="col" className="px-6 py-3 text-center">Mínimo</th>
-                  <th scope="col" className="px-6 py-3 text-center">Máximo</th>
                   <th scope="col" className="px-6 py-3 text-center">Nº Respuestas</th>
                 </tr>
               </thead>
@@ -126,8 +142,6 @@ function EstadisticasGlobales() {
                     <td className="px-6 py-4 text-center font-bold">{parseFloat(item.promedio).toFixed(2)}</td>
                     <td className="px-6 py-4 text-center">{item.desviacion_estandar !== undefined ? parseFloat(item.desviacion_estandar).toFixed(2) : '-'}</td>
                     <td className="px-6 py-4 text-center">{item.varianza !== undefined ? parseFloat(item.varianza).toFixed(2) : '-'}</td>
-                    <td className="px-6 py-4 text-center">{item.minimo !== undefined ? item.minimo : '-'}</td>
-                    <td className="px-6 py-4 text-center">{item.maximo !== undefined ? item.maximo : '-'}</td>
                     <td className="px-6 py-4 text-center">{item.total_respuestas}</td>
                   </tr>
                 ))}

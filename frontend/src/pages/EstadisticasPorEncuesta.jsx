@@ -10,23 +10,35 @@ function EstadisticasPorEncuesta() {
   const [error, setError] = useState('');
 
   useEffect(() => {
+    console.log("🔍 [FRONTEND] Solicitando stats para encuesta:", encuestaId);
     setLoading(true);
     setError('');
+    
     fetchEncuestaStats(encuestaId)
-      .then(res => setData(res.data))
-      .catch(() => setError('No se pudieron cargar las estadísticas de la encuesta.'))
-      .finally(() => setLoading(false));
+      .then(res => {
+        console.log("✅ [FRONTEND] Stats de encuesta recibidas:", res.data);
+        setData(res.data);
+      })
+      .catch(err => {
+        console.error("❌ [FRONTEND] Error cargando stats de encuesta:", err);
+        setError('No se pudieron cargar las estadísticas de la encuesta.');
+      })
+      .finally(() => {
+        console.log("🏁 [FRONTEND] Finalizando carga de stats de encuesta");
+        setLoading(false);
+      });
   }, [encuestaId]);
 
   if (loading) return <p className="p-8 text-center">Cargando estadísticas...</p>;
   if (error) return <p className="p-8 text-center text-red-600">{error}</p>;
+  
   if (!data || !data.questionStats || data.questionStats.length === 0) {
-    // Mostrar gráfico vacío y mensaje
     return (
       <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">
           <header className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">Estadísticas de la Encuesta</h1>
+            <p className="text-lg text-gray-600">Encuesta ID: {encuestaId}</p>
           </header>
           <section className="bg-white p-6 rounded-xl shadow-lg mb-10">
             <h2 className="text-2xl font-semibold text-gray-800 mb-4">Promedio por Pregunta</h2>
@@ -42,16 +54,47 @@ function EstadisticasPorEncuesta() {
     );
   }
 
-  const labels = data.questionStats.map(q => q.questiontext);
-  const values = data.questionStats.map(q => parseFloat(q.avgscore));
+  // ⚡ CAMBIO: Usar nombres correctos de propiedades
+  const labels = data.questionStats.map(q => q.questionText); // ← CORREGIDO
+  const values = data.questionStats.map(q => parseFloat(q.avgScore)); // ← CORREGIDO
 
   return (
     <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
       <div className="max-w-4xl mx-auto">
         <header className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Estadísticas de la Encuesta</h1>
+          <p className="text-lg text-gray-600">Encuesta ID: {encuestaId}</p>
         </header>
 
+        {/* Resumen General */}
+        <section className="bg-white p-6 rounded-xl shadow-lg mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Resumen General</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{parseFloat(data.overall.overallAvg).toFixed(2)}</p>
+              <p className="text-sm text-gray-600">Promedio</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{parseFloat(data.overall.overallVariance).toFixed(2)}</p>
+              <p className="text-sm text-gray-600">Varianza</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600">{parseFloat(data.overall.overallStddev).toFixed(2)}</p>
+              <p className="text-sm text-gray-600">Desv. Estándar</p>
+            </div>
+            <div className="text-center">
+              <p className={`text-2xl font-bold ${
+                data.overall.status === 'fortaleza' ? 'text-green-600' :
+                data.overall.status === 'deficiente' ? 'text-red-600' : 'text-yellow-600'
+              }`}>
+                {data.overall.status.toUpperCase()}
+              </p>
+              <p className="text-sm text-gray-600">Estado</p>
+            </div>
+          </div>
+        </section>
+
+        {/* Gráfico */}
         <section className="bg-white p-6 rounded-xl shadow-lg mb-10">
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Promedio por Pregunta</h2>
           <GraficoResultados
@@ -61,6 +104,7 @@ function EstadisticasPorEncuesta() {
           />
         </section>
 
+        {/* Tabla detallada */}
         <section>
           <h2 className="text-2xl font-semibold text-gray-800 mb-4">Detalle Estadístico</h2>
           <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
@@ -75,9 +119,9 @@ function EstadisticasPorEncuesta() {
               </thead>
               <tbody>
                 {data.questionStats.map((q, idx) => (
-                  <tr key={q.questionid || idx} className="border-b hover:bg-gray-50">
-                    <td className="px-6 py-4">{q.questiontext}</td>
-                    <td className="px-6 py-4 text-center">{parseFloat(q.avgscore).toFixed(2)}</td>
+                  <tr key={q.questionId || idx} className="border-b hover:bg-gray-50">
+                    <td className="px-6 py-4">{q.questionText}</td> {/* ← CORREGIDO */}
+                    <td className="px-6 py-4 text-center font-bold">{parseFloat(q.avgScore).toFixed(2)}</td> {/* ← CORREGIDO */}
                     <td className="px-6 py-4 text-center">{parseFloat(q.variance).toFixed(2)}</td>
                     <td className="px-6 py-4 text-center">{parseFloat(q.stddev).toFixed(2)}</td>
                   </tr>
@@ -85,14 +129,6 @@ function EstadisticasPorEncuesta() {
               </tbody>
             </table>
           </div>
-        </section>
-
-        <section className="mt-8 bg-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-medium text-gray-700 mb-2">Resumen General</h3>
-          <p>Promedio general: <span className="font-bold">{data.overall.overallAvg}</span></p>
-          <p>Varianza general: <span className="font-bold">{data.overall.overallVariance}</span></p>
-          <p>Desviación estándar general: <span className="font-bold">{data.overall.overallStddev}</span></p>
-          <p>Estado: <span className="font-bold">{data.overall.status}</span></p>
         </section>
       </div>
     </div>
