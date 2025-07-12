@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getCurrentUser, hasRole, logout } from "../services/auth";
+import { getCurrentUser, hasRole } from "../services/auth";
 import api from "../api/axios";
-import { DashboardHeader } from "../components/DashboardHeader";
-import EncuestaDashboardCard from "../components/EncuestaDashboardCard"; // ¡El nuevo componente!
+import { Header } from "../components/Header"; // ⚡ CAMBIO: Header unificado
+import EncuestaDashboardCard from "../components/EncuestaDashboardCard";
 
 const Dashboard = () => {
   const [encuestas, setEncuestas] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   
-  // Obtener usuario actual
   const user = getCurrentUser();
 
   useEffect(() => {
     const fetchEncuestas = async () => {
       try {
-        // Usamos nuestra instancia 'api' que ya tiene la URL base
         const res = await api.get("/encuestas");
         setEncuestas(res.data);
       } catch (err) {
@@ -29,10 +27,6 @@ const Dashboard = () => {
     fetchEncuestas();
   }, []);
 
-  const handleLogout = () => {
-    logout();
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0] flex items-center justify-center">
@@ -43,29 +37,12 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#f1f5f9] to-[#e2e8f0]">
-      {/* Header del Dashboard */}
-      <header className="w-full border-b border-[#cbd5e1] bg-white flex items-center justify-between px-6 py-4 shadow-sm">
-        <div>
-          <h1 className="text-2xl font-bold text-[#1e293b]">Dashboard</h1>
-          <p className="text-sm text-gray-600">
-            Bienvenido, <span className="font-semibold">{user?.nombre || 'Usuario'}</span> ({user?.rol})
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate("/")} 
-            className="text-sm text-[#1e293b] border border-[#cbd5e1] px-3 py-2 rounded hover:bg-[#f1f5f9] transition"
-          >
-            🏠 Inicio
-          </button>
-          <button 
-            onClick={handleLogout}
-            className="text-sm text-white bg-red-600 px-3 py-2 rounded hover:bg-red-700 transition"
-          >
-            🚪 Logout
-          </button>
-        </div>
-      </header>
+      {/* ⚡ CAMBIO: Header unificado con showDashboard=false */}
+      <Header 
+        title="Dashboard" 
+        subtitle={`Bienvenido, ${user?.nombre || 'Usuario'} (${user?.rol})`}
+        showDashboard={false}
+      />
 
       <div className="px-6 pt-8 max-w-7xl mx-auto">
         {/* Botones principales según rol */}

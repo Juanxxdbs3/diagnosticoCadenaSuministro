@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchEncuestaStats } from '../services/stats';
 import GraficoResultados from '../components/GraficoResultados';
-import PageHeader from '../components/PageHeader'; // ⚡ NUEVO
+import { Header } from '../components/Header'; // ⚡ CAMBIO: PageHeader → Header
 
 function EstadisticasPorEncuesta() {
   const { encuestaId } = useParams();
@@ -36,11 +36,11 @@ function EstadisticasPorEncuesta() {
   if (!data || !data.questionStats || data.questionStats.length === 0) {
     return (
       <div className="bg-gray-100 min-h-screen">
-        {/* ⚡ NUEVO: Header */}
-        <PageHeader 
+        {/* ⚡ CAMBIO: Header unificado */}
+        <Header 
           title="Estadísticas de la Encuesta" 
           subtitle={`Encuesta ID: ${encuestaId}`}
-          showDashboard={false}
+          showDashboard={true}
         />
         
         <div className="p-4 sm:p-6 lg:p-8">
@@ -65,11 +65,11 @@ function EstadisticasPorEncuesta() {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* ⚡ NUEVO: Header */}
-      <PageHeader 
+      {/* ⚡ CAMBIO: Header unificado */}
+      <Header 
         title="Estadísticas de la Encuesta" 
         subtitle={`Encuesta ID: ${encuestaId}`}
-        showDashboard={false}
+        showDashboard={true}
       />
 
       <div className="p-4 sm:p-6 lg:p-8">

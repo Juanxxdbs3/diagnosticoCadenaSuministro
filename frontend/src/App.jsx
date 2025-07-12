@@ -9,7 +9,7 @@ import ResponderEncuesta from "./pages/ResponderEncuesta";
 import ResultadosPage from './pages/ResultadosPage';
 import EstadisticasGlobales from './pages/EstadisticasGlobales';
 import EstadisticasPorEncuesta from './pages/EstadisticasPorEncuesta';
-import ReporteEmpresa from './pages/ReporteEmpresa'; // ⚡ NUEVO
+import ReporteEmpresa from './pages/ReporteEmpresa';
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -39,15 +39,18 @@ function App() {
           </ProtectedRoute>
         }
       />
-      <Route
+      
+      {/* ⚡ ELIMINAR esta ruta conflictiva */}
+      {/* <Route
         path="/resultados"
         element={
           <ProtectedRoute allowedRoles={['empresa']}>
             <ResultadosPage />
           </ProtectedRoute>
         }
-      />
-      {/* ⚡ NUEVO: Reporte para empresas */}
+      /> */}
+
+      {/* ✅ MANTENER: Reporte para empresas */}
       <Route
         path="/reporte-empresa"
         element={
@@ -56,6 +59,8 @@ function App() {
           </ProtectedRoute>
         }
       />
+      
+      {/* ✅ MANTENER: Estadísticas globales */}
       <Route
         path="/estadisticas-globales"
         element={
@@ -64,12 +69,23 @@ function App() {
           </ProtectedRoute>
         }
       />
-      {/* ⚡ CAMBIO: Permitir a empresas ver estadísticas por encuesta */}
+      
+      {/* ✅ MANTENER: Estadísticas por encuesta */}
       <Route
         path="/estadisticas-encuesta/:encuestaId"
         element={
           <ProtectedRoute allowedRoles={['admin', 'evaluador', 'empresa']}>
             <EstadisticasPorEncuesta />
+          </ProtectedRoute>
+        }
+      />
+      
+      {/* ✅ MANTENER: Resultados individuales (solo admin/evaluador) */}
+      <Route
+        path="/resultados/encuestado/:encuestadoId"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'evaluador']}>
+            <ResultadosPage />
           </ProtectedRoute>
         }
       />

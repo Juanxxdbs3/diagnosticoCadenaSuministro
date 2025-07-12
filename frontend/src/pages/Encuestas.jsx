@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../api/axios";
 import EncuestasCard from "../components/EncuestasCard";
-import PageHeader from "../components/PageHeader";
+import { Header } from '../components/Header'; 
 
 const Encuestas = () => {
   const [encuestas, setEncuestas] = useState([]);
@@ -32,10 +32,10 @@ const Encuestas = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <PageHeader 
+      <Header 
         title="Gestión de Encuestas" 
         subtitle="Lista de todas las encuestas disponibles"
-        showDashboard={false}
+        showDashboard={true} // ⚡ OPCIONAL: Agregar prop para consistencia
       />
 
       <div className="p-6 max-w-7xl mx-auto">

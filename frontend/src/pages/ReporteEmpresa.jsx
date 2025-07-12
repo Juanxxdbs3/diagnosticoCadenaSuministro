@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getCurrentUser } from '../services/auth';
 import api from '../api/axios';
 import GraficoResultados from '../components/GraficoResultados';
-import PageHeader from '../components/PageHeader'; // ⚡ NUEVO
+import { Header } from '../components/Header'; // ⚡ CAMBIO: PageHeader → Header
 
 function ReporteEmpresa() {
   const [stats, setStats] = useState([]);
@@ -51,11 +51,11 @@ function ReporteEmpresa() {
   
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* ⚡ NUEVO: Header reutilizable */}
-      <PageHeader 
+      {/* ⚡ CAMBIO: Header unificado */}
+      <Header 
         title="Mi Reporte Empresarial" 
         subtitle={`Empresa: ${user?.nombre}`}
-        showDashboard={false} // No mostrar botón dashboard porque ya estamos en una página relacionada
+        showDashboard={true}
       />
 
       <div className="p-4 sm:p-6 lg:p-8">

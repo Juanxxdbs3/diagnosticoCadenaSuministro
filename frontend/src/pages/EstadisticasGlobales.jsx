@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { fetchGlobalStats } from '../services/stats';
 import api from '../api/axios';
 import GraficoResultados from '../components/GraficoResultados';
-import PageHeader from '../components/PageHeader'; // ⚡ NUEVO
+import { Header } from '../components/Header'; // ⚡ CAMBIO
 
 function EstadisticasGlobales() {
   const [stats, setStats] = useState([]);
@@ -85,11 +85,11 @@ function EstadisticasGlobales() {
 
   return (
     <div className="bg-gray-100 min-h-screen">
-      {/* ⚡ NUEVO: Header consistente */}
-      <PageHeader 
+      {/* ⚡ CAMBIO: Header unificado */}
+      <Header 
         title="Estadísticas Globales" 
         subtitle="Análisis consolidado de todos los instrumentos y empresas"
-        showDashboard={false}
+        showDashboard={true}
       />
 
       <div className="p-4 sm:p-6 lg:p-8">
