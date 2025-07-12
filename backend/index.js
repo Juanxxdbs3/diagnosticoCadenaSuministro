@@ -22,6 +22,7 @@ import respuestasRoutes from "./routes/respuestas.js";
 import resultadosRoutes from './routes/resultados.js';
 import encuestadosRoutes from './routes/encuestados.js';
 import statsRoutes from "./routes/stats.js";
+import sectoresRoutes from "./routes/sectores.js"; // ⚡ NUEVO
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use("/api/respuestas", respuestasRoutes);
 app.use('/api/resultados', resultadosRoutes);
 app.use('/api', encuestadosRoutes);
 app.use("/api/stats", statsRoutes);
+app.use("/api/sectores", sectoresRoutes); // ⚡ NUEVO
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

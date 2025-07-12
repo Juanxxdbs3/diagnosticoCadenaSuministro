@@ -1,13 +1,22 @@
-import axios from 'axios';
-
-const API = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+import api from "../api/axios";
 
 /**
- * Obtener estadísticas globales de todas las encuestas, con filtros opcionales
- * @param {Object} params - { sector, tipo }
+ * Obtener estadísticas globales
  */
 export function fetchGlobalStats(params = {}) {
-  return axios.get(`${API}/api/stats/global`, { params });
+  console.log("🌐 [FRONTEND] Llamando a:", `/stats/global`);
+  // ⚡ CAMBIO: Quitar /api porque ya está en baseURL
+  return api.get(`/stats/global`, { params })
+    .then(response => {
+      console.log("✅ [FRONTEND] Respuesta completa:", response);
+      console.log("📊 [FRONTEND] Datos recibidos:", response.data);
+      return response;
+    })
+    .catch(error => {
+      console.error("❌ [FRONTEND] Error en fetchGlobalStats:", error);
+      console.error("❌ [FRONTEND] Error response:", error.response);
+      throw error;
+    });
 }
 
 /**
@@ -15,5 +24,17 @@ export function fetchGlobalStats(params = {}) {
  * @param {number} encuestaId
  */
 export function fetchEncuestaStats(encuestaId) {
-  return axios.get(`${API}/api/stats/encuesta/${encuestaId}`);
-} 
+  console.log("🌐 [FRONTEND] Llamando a:", `/stats/encuesta/${encuestaId}`);
+  // ⚡ CAMBIO: Quitar /api porque ya está en baseURL
+  return api.get(`/stats/encuesta/${encuestaId}`)
+    .then(response => {
+      console.log("✅ [FRONTEND] Respuesta completa:", response);
+      console.log("📊 [FRONTEND] Datos recibidos:", response.data);
+      return response;
+    })
+    .catch(error => {
+      console.error("❌ [FRONTEND] Error en fetchEncuestaStats:", error);
+      console.error("❌ [FRONTEND] Error response:", error.response);
+      throw error;
+    });
+}
