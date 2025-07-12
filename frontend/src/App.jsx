@@ -9,6 +9,7 @@ import ResponderEncuesta from "./pages/ResponderEncuesta";
 import ResultadosPage from './pages/ResultadosPage';
 import EstadisticasGlobales from './pages/EstadisticasGlobales';
 import EstadisticasPorEncuesta from './pages/EstadisticasPorEncuesta';
+import ReporteEmpresa from './pages/ReporteEmpresa'; // ⚡ NUEVO
 import ProtectedRoute from "./components/ProtectedRoute";
 
 function App() {
@@ -46,6 +47,15 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* ⚡ NUEVO: Reporte para empresas */}
+      <Route
+        path="/reporte-empresa"
+        element={
+          <ProtectedRoute allowedRoles={['empresa']}>
+            <ReporteEmpresa />
+          </ProtectedRoute>
+        }
+      />
       <Route
         path="/estadisticas-globales"
         element={
@@ -54,10 +64,11 @@ function App() {
           </ProtectedRoute>
         }
       />
+      {/* ⚡ CAMBIO: Permitir a empresas ver estadísticas por encuesta */}
       <Route
         path="/estadisticas-encuesta/:encuestaId"
         element={
-          <ProtectedRoute allowedRoles={['admin', 'evaluador']}>
+          <ProtectedRoute allowedRoles={['admin', 'evaluador', 'empresa']}>
             <EstadisticasPorEncuesta />
           </ProtectedRoute>
         }

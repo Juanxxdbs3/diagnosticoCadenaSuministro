@@ -7,7 +7,7 @@ import { protect, authorize } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-// ⚡ PROTEGER: Solo usuarios logueados pueden ver estadísticas
+// Proteger todas las rutas de estadísticas
 router.use(protect);
 
 /**
@@ -80,48 +80,56 @@ router.get("/empresa/:empresaId", async (req, res) => {
 });
 
 /**
- * GET /api/stats/encuesta/:encuestaId
+ * GET /api/stats/encuesta/:encuestaId - Admin/Evaluador ven todo, Empresa ve solo sus datos
  */
-router.get("/encuesta/:encuestaId", authorize("admin", "evaluador"), async (req, res) => {
+router.get("/encuesta/:encuestaId", async (req, res) => { // ⚡ CAMBIO: Quitar authorize
   const encuestaId = Number(req.params.encuestaId);
-  console.log("📊 [BACKEND] Obteniendo stats para encuesta:", encuestaId);
-
-  if (isNaN(encuestaId)) {
-    return res.status(400).json({ error: "ID de encuesta inválido" });
-  }
 
   try {
+    console.log(`📊 [BACKEND] ${req.user.email} (${req.user.rol}) solicitando stats de encuesta ${encuestaId}`);
+
+    // ⚡ NUEVO: Diferentes consultas según el rol
+    let whereClause = "";
+    let queryParams = [encuestaId];
+
+    if (req.user.rol === "empresa") {
+      // Si es empresa, filtrar solo sus respuestas
+      whereClause = "AND enc.empresa_id = $2";
+      queryParams.push(req.user.id);
+      console.log(`🏢 [BACKEND] Filtrando para empresa ${req.user.id}`);
+    } else {
+      console.log(`👑 [BACKEND] ${req.user.rol} ve todos los datos`);
+    }
+
     // Estadísticas por pregunta
     const q = await pool.query(`
-      SELECT
-        p.id               AS "questionId",
-        p.texto            AS "questionText",
-        COALESCE(ROUND(AVG(o.valor)::numeric, 2), 0)     AS "avgScore",
-        COALESCE(ROUND(VAR_SAMP(o.valor)::numeric, 2), 0) AS "variance",
-        COALESCE(ROUND(STDDEV_SAMP(o.valor)::numeric, 2), 0) AS "stddev"
-      FROM respuestas r
-      JOIN preguntas p ON p.id = r.pregunta_id
-      JOIN opciones o ON o.id = r.opcion_id
-      WHERE p.encuesta_id = $1
+      SELECT 
+        p.id as questionId,
+        p.texto as questionText,
+        COALESCE(ROUND(AVG(o.valor)::numeric, 2), 0) as avgScore,
+        COALESCE(ROUND(VAR_SAMP(o.valor)::numeric, 2), 0) as variance,
+        COALESCE(ROUND(STDDEV_SAMP(o.valor)::numeric, 2), 0) as stddev
+      FROM preguntas p
+      LEFT JOIN respuestas r ON r.pregunta_id = p.id
+      LEFT JOIN opciones o ON o.id = r.opcion_id
+      LEFT JOIN encuestados enc ON enc.id = r.encuestado_id
+      WHERE p.encuesta_id = $1 ${whereClause}
       GROUP BY p.id, p.texto
       ORDER BY p.id;
-    `, [encuestaId]);
-
-    console.log("📊 [BACKEND] Stats por pregunta:", q.rows);
+    `, queryParams);
 
     // Estadísticas generales
     const overall = await pool.query(`
-      SELECT
-        COALESCE(ROUND(AVG(o.valor)::numeric, 2), 0)     AS "overallAvg",
-        COALESCE(ROUND(VAR_SAMP(o.valor)::numeric, 2), 0) AS "overallVariance",
-        COALESCE(ROUND(STDDEV_SAMP(o.valor)::numeric, 2), 0) AS "overallStddev"
+      SELECT 
+        COALESCE(ROUND(AVG(o.valor)::numeric, 2), 0) as overallAvg,
+        COALESCE(ROUND(VAR_SAMP(o.valor)::numeric, 2), 0) as overallVariance,
+        COALESCE(ROUND(STDDEV_SAMP(o.valor)::numeric, 2), 0) as overallStddev
       FROM respuestas r
       JOIN preguntas p ON p.id = r.pregunta_id
       JOIN opciones o ON o.id = r.opcion_id
-      WHERE p.encuesta_id = $1;
-    `, [encuestaId]);
-
-    console.log("📊 [BACKEND] Stats generales:", overall.rows);
+      JOIN encuestados enc ON enc.id = r.encuestado_id
+      WHERE p.encuesta_id = $1 ${whereClause};
+    `, queryParams);
 
     const avg = Number(overall.rows[0]?.overallAvg) || 0;
     const status = avg < 2 ? 'deficiente' : avg > 4 ? 'fortaleza' : 'normal';
@@ -136,7 +144,7 @@ router.get("/encuesta/:encuestaId", authorize("admin", "evaluador"), async (req,
       }
     };
 
-    console.log("✅ [BACKEND] Enviando respuesta:", response);
+    console.log(`✅ [BACKEND] Enviando ${q.rows.length} preguntas para encuesta ${encuestaId}`);
     res.json(response);
   } catch (err) {
     console.error("❌ [BACKEND] Error stats por encuesta:", err);

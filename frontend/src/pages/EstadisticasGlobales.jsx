@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import { fetchGlobalStats } from '../services/stats';
-import api from '../api/axios'; // ← CAMBIO: Usar tu instancia configurada
+import api from '../api/axios';
 import GraficoResultados from '../components/GraficoResultados';
+import PageHeader from '../components/PageHeader'; // ⚡ NUEVO
 
 function EstadisticasGlobales() {
   const [stats, setStats] = useState([]);
@@ -83,13 +84,15 @@ function EstadisticasGlobales() {
   }
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 sm:p-6 lg:p-8">
-      <div className="max-w-7xl mx-auto">
-        <header className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Estadísticas Globales</h1>
-          <p className="text-lg text-gray-600">Análisis consolidado de todos los instrumentos y empresas.</p>
-        </header>
+    <div className="bg-gray-100 min-h-screen">
+      {/* ⚡ NUEVO: Header consistente */}
+      <PageHeader 
+        title="Estadísticas Globales" 
+        subtitle="Análisis consolidado de todos los instrumentos y empresas"
+        showDashboard={false}
+      />
 
+      <div className="p-4 sm:p-6 lg:p-8">
         {/* Filtros */}
         <div className="flex gap-4 mb-6">
           <select value={sector} onChange={e => setSector(e.target.value)} className="border rounded px-3 py-2">

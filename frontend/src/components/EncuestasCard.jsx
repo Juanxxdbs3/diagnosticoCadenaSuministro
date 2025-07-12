@@ -1,40 +1,27 @@
-import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import axios from "axios";
+import React from "react";
 
-export function EncuestasCard(props) {
-  const { title, id } = props;
-  const [preguntas, setPreguntas] = useState([]);
-  const navigate = useNavigate();
-
-  const cargarPreguntas = async () => {
-    try {
-      const res = await axios.get("http://localhost:3001/api/preguntas", {
-        id,
-      });
-      setPreguntas(res.data);
-    } catch (err) {
-      console.error("Error al cargar preguntas", err);
-    }
-  };
-
-  const handleClick = () => {
-    navigate("/dashboard");
-  };
-
-  useEffect(() => {
-      cargarPreguntas();
-  }, []);
+const EncuestasCard = ({ encuesta }) => {
+  const { id, titulo, descripcion } = encuesta;
 
   return (
-    <div onClick={handleClick} className="border border-[#cbd5e1] bg-white shadow-md w-64 h-40 p-4 flex flex-col justify-between rounded-lg hover:shadow-lg transition">
-      <div className="flex justify-between items-center">
-        <h3 className="text-[#1e293b] font-semibold text-lg">{title}</h3>
+    <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 p-6 border border-gray-200">
+      <div className="mb-4">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{titulo}</h3>
+        <p className="text-sm text-gray-600 line-clamp-3">
+          {descripcion || "Sin descripción disponible"}
+        </p>
       </div>
-      <div className="text-[#334155] text-sm space-y-1">
-        <p>Cantidad de preguntas: {preguntas.length}</p>
-        <p>Cantidad de respuestas: {id}</p>
+
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-gray-500">ID: {id}</span>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            Disponible
+          </span>
+        </div>
       </div>
     </div>
   );
-}
+};
+
+export default EncuestasCard;
