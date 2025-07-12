@@ -1,4 +1,4 @@
- /*Cambios:
+/*Cambios:
  1. Se elimina la columna `sector` de la consulta INSERT, ya que no existe
     en la nueva tabla `encuestas`.
  2. Se quita el `protect` de la ruta GET para que cualquiera pueda ver los
@@ -7,24 +7,42 @@
 */
 import express from "express";
 import pool from "../db.js";
-//import { protect, authorize } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
-// Ruta pública para obtener los títulos de todas las encuestas
+// Ruta GET para obtener todas las encuestas
 router.get("/", async (req, res) => {
   try {
-    const result = await pool.query("SELECT id, titulo FROM encuestas ORDER BY id ASC");
-    res.json(result.rows);
+    console.log("📊 [BACKEND] Intentando obtener encuestas...");
+    
+    // ⚡ CAMBIO: Usar destructuring como en tu ejemplo
+    const { rows } = await pool.query(`
+      SELECT id, titulo, fecha_creacion 
+      FROM encuestas 
+      ORDER BY fecha_creacion DESC
+    `);
+    
+    // ⚡ CAMBIO: Mostrar como tabla igual que tu ejemplo
+    console.table(rows);
+    console.log(`📋 Encuestas obtenidas: ${rows.length}`);
+    
+    res.json(rows);
   } catch (err) {
-    console.error("Error al obtener encuestas:", err);
-    res.status(500).json({ error: "Error al obtener encuestas" });
+    console.error("❌ [BACKEND] Error al obtener encuestas:", err);
+    console.error("❌ [BACKEND] Detalles completos:", {
+      message: err.message,
+      code: err.code,
+      stack: err.stack
+    });
+    res.status(500).json({ 
+      error: "Error al obtener encuestas",
+      message: err.message
+    });
   }
 });
 
 // Ruta protegida para crear una nueva encuesta (solo admin/evaluador)
 router.post("/", async (req, res) => {
-  // Se recibe solo el 'titulo'
   const { titulo } = req.body;
 
   if (!titulo) {
@@ -32,7 +50,6 @@ router.post("/", async (req, res) => {
   }
 
   try {
-    // Se elimina 'sector' de la consulta
     const result = await pool.query(
       "INSERT INTO encuestas (titulo) VALUES ($1) RETURNING id",
       [titulo]

@@ -27,6 +27,7 @@ dist-ssr
 # Archivos de base de datos
 *.sql
 prueba.sql
+diagnosticoCadenaSuministroBD.sql
 
 # Archivos de documentación
 requisitos y planeacion*

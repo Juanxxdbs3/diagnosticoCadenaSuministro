@@ -59,6 +59,12 @@ const ResponderEncuesta = () => {
       throw err;
     }
   };
+
+  // ⚡ NUEVO: Handler específico para el formulario de datos
+  const handleSubmitDatosEncuestado = (e) => {
+    e.preventDefault(); // ← Esto elimina el warning
+    setFlag(true);
+  };
   
   const handleNext = async () => {
     if (indice < preguntas.length - 1) {
@@ -114,7 +120,8 @@ const ResponderEncuesta = () => {
     return (
       <div className="min-h-screen bg-gray-100 flex flex-col items-center">
         <Header />
-        <form onSubmit={() => {setFlag(true);}} className="bg-white rounded-xl shadow-md p-6 w-full max-w-xl mt-18">
+        {/* ⚡ CAMBIO: onSubmit usa el nuevo handler */}
+        <form onSubmit={handleSubmitDatosEncuestado} className="bg-white rounded-xl shadow-md p-6 w-full max-w-xl mt-18">
           <h2 className="text-2xl font-bold mb-4">Datos del Encuestado</h2>
           {[
             ["empresaId", "ID Empresa*"],
@@ -193,7 +200,7 @@ const ResponderEncuesta = () => {
                 </div>
               );
             case "matriz_escala":
-            case "matriz_opcion_multiple":
+            case "matriz_opcion_multiple": {
               const respuestasMatrizActual = pregunta.tipo === "matriz_escala" ? respuestasMatriz : respuestasMatrizMultiple;
               return (
                 <div className="overflow-x-auto mb-6">
@@ -231,6 +238,7 @@ const ResponderEncuesta = () => {
                   </table>
                 </div>
               );
+            }
             default:
               return (
                 <input
